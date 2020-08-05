@@ -62,3 +62,6 @@ auctiondate  hammerprice  lotcomment  bottlingname
 2019-05-19   4750         n/a         The Art of the Blend No 3                         
 2019-05-19   3000         n/a         The Art of the Blend No 2                         
 2019-05-19   2750         n/a         The Art of the Blend No 1   
+
+SELECT auctiondate, hammerprice, bottlingname FROM auctionlots INNER JOIN bottlings ON auctionlots.bottlinglistid = bottlings.bottlingid WHERE bottlingname LIKE '%Flask%' ;
+
