@@ -1,0 +1,64 @@
+CREATE TABLE auctionlots(
+lotid integer primary key autoincrement,
+auctiondate text,
+lotreference text,
+hammerprice integer, 
+lotcomment text,
+auctionhouseid integer,
+bottlinglistid integer,
+foreign key(auctionhouseid) references auctionhouses(auctionhouseid),
+foreign key(bottlinglistid) references bottlings(bottlingid));
+
+Note 'hammerprice' is in PENCE
+
+
+CREATE TABLE bottlings(
+bottlingid integer primary key autoincrement,
+bottlingname text,
+abv real,
+bottlesize text,
+malttype text,
+casktype text,
+singlemalt integer,
+blend integer,
+newmake integer,
+comment text,
+year integer,
+originalprice real,
+barcode text,
+bottlerun integer);
+
+CREATE TABLE auctionhouses(
+auctionhouseid integer primary key autoincrement,
+auctionhousename text,
+auctionhousewebsite text );
+
+.import auctionhouses.csv auctionhouses
+.import bottlings.csv bottlings 
+.import lots.csv auctionlots
+
+Example
+sqlite> .width 0 0 0 50
+sqlite> SELECT auctiondate, hammerprice, lotcomment, auctionhousename FROM auctionlots INNER JOIN auctionhouses ON auctionlots.auctionhouseid = auctionhouses.auctionhouseid;
+auctiondate  hammerprice  lotcomment  auctionhousename                                  
+-----------  -----------  ----------  --------------------------------------------------
+2019-12-15   6500         n/a           Just Whisky                                     
+2019-06-16   2449         n/a           Just Whisky                                     
+2019-06-16   60000        Bottle 300    Just Whisky                                     
+2019-05-19   3550         n/a           Just Whisky                                     
+2019-05-19   4750         n/a           Just Whisky                                     
+2019-05-19   3000         n/a           Just Whisky                                     
+2019-05-19   2750         n/a           Just Whisky                                     
+2019-05-19   6250         n/a           Just Whisky                                     
+2019-04-21   60000        Bottle 119    Just Whisky       
+
+sqlite> SELECT auctiondate, hammerprice, lotcomment, bottlingname FROM auctionlots INNER JOIN bottlings ON auctionlots.bottlinglistid = bottlings.bottlingid;
+auctiondate  hammerprice  lotcomment  bottlingname                                      
+-----------  -----------  ----------  --------------------------------------------------
+2019-12-15   6500         n/a         2018 Special Release                              
+2019-06-16   2449         n/a         New Make for St Andrews Day                       
+2019-06-16   60000        Bottle 300  Inaugural Release                                 
+2019-05-19   3550         n/a         The Art of the Blend No 4                         
+2019-05-19   4750         n/a         The Art of the Blend No 3                         
+2019-05-19   3000         n/a         The Art of the Blend No 2                         
+2019-05-19   2750         n/a         The Art of the Blend No 1   
