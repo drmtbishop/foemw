@@ -1,86 +1,59 @@
 #!/usr/bin/env python3
-
+import sys
 import sqlite3
 import time
 import datetime
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 from dateutil import parser
-from matplotlib import style
-#style.use('fivethirtyeight')
 
-
-conn = sqlite3.connect('foemwSource')
+conn = sqlite3.connect('./Documents/foemw/foemwSource')
 c = conn.cursor()
 
-bottleSearch = '%Inaugural%'
-
-def read_from_db():
-    c.execute ('SELECT auctiondate, hammerprice, bottlingname \
-    FROM auctionlots \
-    INNER JOIN bottlings ON auctionlots.bottlinglistid = bottlings.bottlingid \
-    WHERE bottlingname LIKE ? ORDER BY auctiondate', (bottleSearch,))
-    data = c.fetchall()
-    #print(data)
-    for row in data:
-        print(row)
+bottleSearch = str('%'+input('Enter bottle name: ')+'%')
+bottlename = ''
 
 def graph_data():
-    c.execute ('SELECT auctiondate, hammerprice, bottlingname \
+    c.execute ('SELECT auctiondate, hammerprice/100, bottlingname \
     FROM auctionlots \
     INNER JOIN bottlings ON auctionlots.bottlinglistid = bottlings.bottlingid \
     WHERE bottlingname LIKE ? ORDER BY auctiondate', (bottleSearch,))
     data = c.fetchall()
-
+    try:
+        print('Bottle selected: '+data[0][2])
+    except IndexError:
+        print('Nothing found')
+        sys.exit()
+    bottlename = data[0][2]
     dates = []
     values = []
 
     for row in data:
+        print(row)
         dates.append(parser.parse(row[0]))
-        values.append(row[1]/100)
+        values.append(row[1])
+    #Rolling mean values
+    N = 3
+    cumsum, moving_aves = [0], []
+    for i, x in enumerate(values, 1):
+        cumsum.append(cumsum[i-1] + x)
+        if i >= N:
+            moving_ave = (cumsum[i] - cumsum [i-N])/N
+            moving_aves.append(moving_ave)
+        else: moving_aves.append(cumsum[i]/i)
 
-    plotFn(dates, values, bottleSearch)
-    #plt.plot_date(dates, values, '+')
-    #plt.ylabel('Auction Price (£)')
-    #plt.xticks(rotation=90)
-    #plt.subplots_adjust(bottom = 0.3)
-    #plt.title('Auction Price History for Search: ' + bottleSearch)
-    #plt.show()
+    plotFn(dates, values, moving_aves, bottlename)
 
-def multi_graph_plot():
-    c.execute ('SELECT auctiondate, hammerprice, bottlingname \
-    FROM auctionlots \
-    INNER JOIN bottlings ON auctionlots.bottlinglistid = bottlings.bottlingid \
-    WHERE bottlingname LIKE ? ORDER BY auctiondate', (bottleSearch,))
-    data = c.fetchall()
 
-    dates = []
-    values = []
-    bottles = []
-
-    for row in data:
-        if row[2] not in bottles: bottles.append(row[2])
-    for bottle in sorted(bottles):
-        dates = []
-        values = []
-        for row in data:
-            if row[2] == bottle:
-                values.append(row[1]/100)
-                dates.append(parser.parse(row[0]))
-        plotFn(dates, values, bottle)
-
-def plotFn(dates, values, bottle):
-    plt.plot_date(dates, values, '+')
+def plotFn(dates, values, moving_aves, bottlename):
+    plt.plot_date(dates, values, 'o')
+    plt.plot_date(dates, moving_aves, '-')
     plt.ylabel('Auction Price (£)')
     plt.xticks(rotation=90)
     plt.subplots_adjust(bottom = 0.3)
-    plt.title('Auction Price History for Search: ' + bottle)
+    plt.title('Auction Price History with Rolling Average: ' + bottlename)
     plt.show()
 
-
-
-read_from_db()
 graph_data()
-#multi_graph_plot()
+
 c.close()
 conn.close()

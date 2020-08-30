@@ -65,3 +65,49 @@ auctiondate  hammerprice  lotcomment  bottlingname
 
 SELECT auctiondate, hammerprice, bottlingname FROM auctionlots INNER JOIN bottlings ON auctionlots.bottlinglistid = bottlings.bottlingid WHERE bottlingname LIKE '%Flask%' ;
 
+.width 0 30 0 0
+sqlite> SELECT auctiondate, bottlingname, ROUND(AVG(hammerprice),0)/100 'Average', MIN(hammerprice)/100 'Min-£', MAX(hammerprice)/100 'Max-£' FROM auctionlots INNER JOIN bottlings ON auctionlots.bottlinglistid = bottlings.bottlingid GROUP BY bottlingname ORDER BY Average  desc;
+auctiondate  bottlingname                    Average     Min-£       Max-£     
+-----------  ------------------------------  ----------  ----------  ----------
+2018-08-26   Inaugural Release               701.79      440         1025      
+2018-12-02   SMWS 136.1 (3yo)                163.17      72          240       
+2019-04-07   Celtic 1967                     122.86      60          380       
+2020-07-06   SMWS 136.2 (3yo)                98.13       60          200       
+2020-06-07   Hip Flask Series No 05          79.0        40          130       
+2020-07-19   The Art of the Blend No 3       71.5        47          100       
+2019-03-03   2018 Special Release            71.37       45          110       
+2020-02-23   Hip Flask Series No 01          66.43       45          100       
+2020-03-22   Treble Treble                   65.0        40          110       
+2020-06-07   Hip Flask Series No 04          62.86       45          100 
+
+sqlite> SELECT bottlingname,auctiondate,auctionhousename,hammerprice/100 FROM auctionlots JOIN bottlings ON auctionlots.bottlinglistid = bottlings.bottlingid JOIN auctionhouses ON auctionlots.auctionhouseID = auctionhouses.auctionhouseid WHERE auctiondate LIKE '2019%' limit 5;
+bottlingname          auctiondate  auctionhousename  hammerprice/100
+--------------------  -----------  ----------------  ---------------
+2018 Special Release  2019-12-15     Just Whisky     65             
+New Make for St Andr  2019-06-16     Just Whisky     24             
+Inaugural Release     2019-06-16     Just Whisky     600            
+The Art of the Blend  2019-05-19     Just Whisky     35             
+The Art of the Blend  2019-05-19     Just Whisky     47   
+
+LATEST 10 AUCTION LOTS
+sqlite> SELECT bottlingname,auctiondate,auctionhousename,hammerprice/100 FROM auctionlots JOIN bottlings ON auctionlots.bottlinglistid = bottlings.bottlingid JOIN auctionhouses ON auctionlots.auctionhouseID = auctionhouses.auctionhouseid WHERE auctiondate LIKE '2020%' ORDER BY auctiondate DESC LIMIT 10; 
+
+ADDING NEW AUCTION DATA
+INSERT INTO auctionlots(auctiondate, lotreference, hammerprice, lotcomment, auctionhouseid, bottlinglistid)
+VALUES('2020-01-30', '123abc', 3000, 'n/a', 20, 2);
+
+GETTING DATA TO PLOT
+e.g. Hip Flask No 1 lots
+
+sqlite> SELECT bottlingname,auctiondate,hammerprice/100 FROM auctionlots JOIN bottlings ON auctionlots.bottlinglistid = bottlings.bottlingid WHERE bottlingname LIKE '%No 01' ORDER BY auctiondate;
+bottlingname            auctiondate  hammerprice/100
+----------------------  -----------  ---------------
+Hip Flask Series No 01  2018-07-01   75             
+Hip Flask Series No 01  2018-08-05   50             
+Hip Flask Series No 01  2018-08-05   45             
+Hip Flask Series No 01  2018-09-02   55             
+Hip Flask Series No 01  2019-01-06   80             
+Hip Flask Series No 01  2019-11-24   60             
+Hip Flask Series No 01  2020-02-23   100 
+
+
