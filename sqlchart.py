@@ -9,17 +9,34 @@ from dateutil import parser
 conn = sqlite3.connect('./Documents/foemw/foemwSource')
 c = conn.cursor()
 
-bottleSearch = str('%'+input('Enter bottle name: ')+'%')
-bottlename = ''
+#bottleSearch = str('%'+input('Enter bottle name: ')+'%')
+#bottleId = 0
 
 def graph_data():
-    c.execute ('SELECT auctiondate, hammerprice/100, bottlingname \
+    # Get Bottling Name
+    c.execute ('SELECT bottlingid, bottlingname FROM bottlings')
+    data = c.fetchall()
+    bottleIdList=[]
+    for i in data:
+        bottleIdList.append(int(i[0]))
+        print(i[0],i[1])
+    print(bottleIdList)
+    bottleSearch = int(input('Enter bottle ID number: '))
+    if bottleSearch in bottleIdList:
+        bottleId = int(bottleSearch)
+        #print('Bottle ID selected: '+str(bottleSearch))
+    else:
+        print('Wrong number')
+        sys.exit()
+
+    c.execute ('SELECT auctiondate, hammerprice/100, bottlingname, bottlingid \
     FROM auctionlots \
     INNER JOIN bottlings ON auctionlots.bottlinglistid = bottlings.bottlingid \
-    WHERE bottlingname LIKE ? ORDER BY auctiondate', (bottleSearch,))
+    WHERE bottlingid == ? ORDER BY auctiondate', (bottleId,))
     data = c.fetchall()
+    #for e in data: print(e)
     try:
-        print('Bottle selected: '+data[0][2])
+        print('Bottle selected: '+str(data[0][2]))
     except IndexError:
         print('Nothing found')
         sys.exit()
