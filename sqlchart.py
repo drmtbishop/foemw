@@ -20,7 +20,7 @@ def graph_data():
     for i in data:
         bottleIdList.append(int(i[0]))
         print(i[0],i[1])
-    print(bottleIdList)
+    #print(bottleIdList)
     bottleSearch = int(input('Enter bottle ID number: '))
     if bottleSearch in bottleIdList:
         bottleId = int(bottleSearch)
