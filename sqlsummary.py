@@ -54,12 +54,12 @@ def summary_data():
     #for col in col_names: print(col)
     print(col_names[0], col_names[2], col_names[3])
     for row in data:
-        print(row[0], row[2], '\t£',row[3])
+        print(row[0].ljust(10), row[2].ljust(30),'\t£',row[3])
         values.append(row[3])
     priceMean = sum(values) / len(values)
     print('Mean Hammer Price: £%.2f' % priceMean)
-    print('Min Hammer Price: £%.2f' % min(values))
-    print('Max Hammer Price: £%.2f' % max(values))
+    print('Min  Hammer Price: £%.2f' % min(values))
+    print('Max  Hammer Price: £%.2f' % max(values))
 
 
 
