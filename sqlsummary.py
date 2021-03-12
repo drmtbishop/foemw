@@ -34,16 +34,17 @@ def summary_data():
         print('Wrong number')
         sys.exit()
 
-    c.execute ('SELECT auctiondate, auctionlots.auctionhouseid, auctionhouses.auctionhousename, hammerprice/100, bottlings.bottlingname, bottlingid \
+    c.execute ('SELECT auctiondate, auctionlots.auctionhouseid, auctionhouses.auctionhousename, hammerprice/100, bottlings.bottlingname, bottlings.originalprice bottlingid \
     FROM auctionlots \
     INNER JOIN auctionhouses ON auctionlots.auctionhouseid = auctionhouses.auctionhouseid \
     INNER JOIN bottlings ON auctionlots.bottlinglistid = bottlings.bottlingid \
     WHERE bottlingid == ? ORDER BY auctiondate DESC', (bottleId,))
     data = c.fetchall()
-    #for e in data: print(e)
+    for e in data: print(e)
     print('\n')
     try:
         print('Bottle selected: '+str(data[0][4]))
+        print('Original Price: £%.2f' % data[0][5])
     except IndexError:
         print('Nothing found')
         sys.exit()
