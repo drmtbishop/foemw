@@ -14,10 +14,10 @@ c = conn.cursor()
 def get_lot_data_from_input():
 
     # Bottling Name
-    c.execute ('SELECT bottlingid, bottlingname FROM bottlings')
+    c.execute ('SELECT bottlingid, bottlingname, year FROM bottlings')
     data = c.fetchall()
     for i in data:
-        print(i[0],i[1])
+        print(i[0],i[1],i[2])
 
     bottleSearch = int(input('Enter bottle ID number: '))
     if bottleSearch < len(data):
