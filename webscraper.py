@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 '''
 Scraping auction websites for bottle data
 '''
@@ -9,7 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import html
-#import sys
+import sys
 #import time
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -22,7 +23,7 @@ def Convert(lst):
     res_dct = {lst[i].strip('"'): lst[i + 1].strip('"') for i in range(0, len(lst), 2)}
     return res_dct
 # Search input
-searchterm = input("Search term: ");
+searchterm = input("Search term: ").replace(" ","+");
 
 # Whisky Hammer search
 whdata = {}
@@ -53,9 +54,11 @@ def wh():
 	whdata = {};
 	for bottle in whiskyHammer:
 #		print (str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'], '%d\/%m\/%Y').date())+":"+whiskyHammer[bottle]['item_price']+":"+whiskyHammer[bottle]['name'])
-		whdata.update({str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'],'%d\/%m\/%Y').date()) : whiskyHammer[bottle]['item_price']})
+		whdata.update({whiskyHammer[bottle]['id'] : {str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'],'%d\/%m\/%Y').date()) : whiskyHammer[bottle]['item_price']}})
+	print ("WH Records: "+str(len(whdata)))
 	#return results_plot(whdata, 'Whisky Hammer')
 	return whdata
+
 
 # Whisky Auctioneer search
 wadata = {}
@@ -67,7 +70,7 @@ def wa():
 	wa_data = BeautifulSoup(wa_htmlcode, 'html.parser')
 	try:
 		wa_lastpage = int(wa_data.find('li', {'class':'pager-last last'}).find('a').get('href')[-1])
-	except IndexError:
+	except (IndexError, AttributeError):
 		wa_lastpage = 0
 	print ('Getting Whisky Auctioneer data from '+str(wa_lastpage+1)+' total page(s)...')
 	# Loop through pages
@@ -79,50 +82,54 @@ def wa():
 		wa_url = "https://whiskyauctioneer.com/auction-search?text="+searchterm+"&sort=field_reference_field_end_date+DESC&items_per_page=500&f%5B0%5D=cask_type%3A41&page="+str(eachpage)
 		#print (wa_url)
 		#wa_url = "https://whiskyauctioneer.com/auction-search?text="+searchterm+"&sort=field_reference_field_end_date+DESC&items_per_page=500&f%5B0%5D=cask_type%3A41"
-		#wa_url = "https://whiskyauctioneer.com/auction-search?text="+searchterm
 		wa_htmlcode = requests.get(wa_url).content
 		wa_data = BeautifulSoup(wa_htmlcode, 'html.parser')
 		wa_auctionlist = wa_data.find('div', {'class':'view-content'})
-		wa_lotlist = wa_auctionlist.find_all('span')
+		try:
+			wa_lotlist = wa_auctionlist.find_all('span')
+		except AttributeError:
+			print ("No such bottle - please try again")
+			sys.exit()
 		#print (len(wa_lotlist))
-		#whiskyAuctioneer={}
-		#tempdict={'lot':'','title':'','price':'','date':''}
+		pagedict = {}
 		# Function to split list into chunks of 7
 		def chunker(seq, size):
 		    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 		for group in chunker (wa_lotlist, 7):
-			#tempdict = {};
+			tempdict = {};
 			for label in group:
-				tempdict = {}
-				if re.search('lotnumber', str(label)):
+				#print (label)
+				#tempdict = {}
+				if re.search('Current Bid:', str(label)):
+					break;
+				elif re.search('lotnumber', str(label)):
 					tempdict['lot']=label.get_text(strip=True)[4:];
 					tempkey = tempdict['lot'];
 				elif re.search('protitle', str(label)):
 					tempdict['title']=label.get_text(strip=True);
-				elif re.search('Winning', str(label)):
-					pass;
-				elif re.search('£', str(label)):
-					tempdict['price']=label.get_text().strip("£ ").replace(',' ,'')
+				elif re.search(u"\xA3", str(label)):
+					tempdict['price']= label.get_text().strip(u"\xA3").replace(',' , '');
 				elif re.search('^\d\d\.\d\d', label.get_text(strip=True)):
 					tempdict['date'] = datetime.strptime(label.get_text(), '%d.%m.%y').date();
 				newdict = {tempkey : tempdict};
-				whiskyAuctioneer.update(newdict);
-	print (len(whiskyAuctioneer))
-#	for k,v in whiskyAuctioneer.items(): 
-#		for key in v:
-#			print (key +":", v[key])
-	print ("\n"+"Whisky Auctioneer:")
+				pagedict.update(newdict);
+				whiskyAuctioneer.update(pagedict);
+			else:
+				continue
+			#break
+	#print (len(whiskyAuctioneer))
+
 	wadata = {};
 	for bottle in whiskyAuctioneer:
-		print (whiskyAuctioneer[bottle][0])
-		#print (str(whiskyAuctioneer[bottle]['date']))
-		#print (str(whiskyAuctioneer[bottle]['date'])+":"+whiskyAuctioneer[bottle]['price']+":"+whiskyAuctioneer[bottle]['title'])
 		try:
-			wadata.update({str(whiskyAuctioneer[bottle]['date']) : whiskyAuctioneer[bottle]['price']})
+			wadata.update({whiskyAuctioneer[bottle]['lot'] : {str(whiskyAuctioneer[bottle]['date']) : whiskyAuctioneer[bottle]['price']}})
 		except KeyError:
 			continue
+
 	#return results_plot(wadata, 'Whisky Auctioneer')
-	return print (len(wadata))
+	print ("WA Records: "+str(len(wadata)))
+	return wadata
+
 
 # Just Whisky search
 jwdata = {}
@@ -148,7 +155,7 @@ def jw():
 		for entry in jw_auctionlist:
 			tempdict = {}
 			tempdict['title']=entry.find('a', {'class':'product_img_link'}).get('title');
-			tempdict['price']=float(entry.find('span', {'class':'price'}).get_text().split('£ ',1)[1].replace("," , ""))
+			tempdict['price']=float(entry.find('span', {'class':'price'}).get_text().split(u"\xA3",1)[1].replace("," , ""))
 			tempdict['lot']=entry.find('div', {'class':'lot'}).get_text().split(': ',1)[1]
 			tempkey = tempdict['lot']
 			try:
@@ -162,16 +169,19 @@ def jw():
 	jwdata = {};
 	for bottle in justWhisky:
 #		print (str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'], '%d\/%m\/%Y').date())+":"+whiskyHammer[bottle]['item_price']+":"+whiskyHammer[bottle]['name'])
-		jwdata.update({str(justWhisky[bottle]['date']) : justWhisky[bottle]['price']})
+		jwdata.update({justWhisky[bottle]['lot'] : {str(justWhisky[bottle]['date']) : justWhisky[bottle]['price']}})
 	#return results_plot(jwdata, 'Just Whisky')
+	print ("JW Records: "+str(len(jwdata)))
 	return jwdata
+
 
 def results_plot(bottlelist, auction):
 #	Plot data
-	plotstuff = {}
+	plotstuff = []
 	for k,v in bottlelist.items():
-		plotstuff[pltdates.datestr2num(k)] = float(v)
-	data = list(plotstuff.items())
+		for key,value in v.items():
+			plotstuff.append((pltdates.datestr2num(key) , float(value)))
+	data = plotstuff
 	fig, ax = plt.subplots(1,1,figsize=(10, 5))
 	datemajor = pltdates.DateFormatter('%Y')
 	dateminor = pltdates.DateFormatter('%m:%Y')
@@ -189,34 +199,35 @@ def results_plot(bottlelist, auction):
 	plt.tight_layout()
 	plt.show()
 
+
 def multiplot(wadata, whdata, jwdata):
 	# Plot all lines on one plot
 	# WA data
-	waplotstuff = {}
+	waplotstuff = []
 	for k,v in wadata.items():
-		waplotstuff[pltdates.datestr2num(k)] = float(v)
-	walist = list(waplotstuff.items())
-	wadates = [x[0] for x in walist]
-	wavalues = [x[1] for x in walist]
+		for key,value in v.items():
+			waplotstuff.append((pltdates.datestr2num(key) , float(value)))
+	wadates = [x[0] for x in waplotstuff]
+	wavalues = [x[1] for x in waplotstuff]
 	# WH data
-	whplotstuff = {}
+	whplotstuff = []
 	for k,v in whdata.items():
-		whplotstuff[pltdates.datestr2num(k)] = float(v)
-	whlist = list(whplotstuff.items())
-	whdates = [x[0] for x in whlist]
-	whvalues = [x[1] for x in whlist]
+		for key,value in v.items():
+			whplotstuff.append((pltdates.datestr2num(key) , float(value)))
+	whdates = [x[0] for x in whplotstuff]
+	whvalues = [x[1] for x in whplotstuff]
 	# JW data
-	jwplotstuff = {}
+	jwplotstuff = []
 	for k,v in jwdata.items():
-		jwplotstuff[pltdates.datestr2num(k)] = float(v)
-	jwlist = list(jwplotstuff.items())
-	jwdates = [x[0] for x in jwlist]
-	jwvalues = [x[1] for x in jwlist]
+		for key,value in v.items():
+			jwplotstuff.append((pltdates.datestr2num(key) , float(value)))
+	jwdates = [x[0] for x in jwplotstuff]
+	jwvalues = [x[1] for x in jwplotstuff]
 
 	plt.figure(figsize=(10,5))
-	plt.plot(wadates, wavalues, color = 'b', label = 'Whisky Auctioneer')
-	plt.plot(whdates, whvalues, color = 'r', label = 'Whisky Hammer')
-	plt.plot(jwdates, jwvalues, color = 'c', label = 'Just Whisky')
+	plt.plot(wadates, wavalues, marker = 'x', color = 'b', label = 'Whisky Auctioneer')
+	plt.plot(whdates, whvalues, marker = '*', color = 'r', label = 'Whisky Hammer')
+	plt.plot(jwdates, jwvalues, marker = 'o', color = 'c', label = 'Just Whisky')
 	ax = plt.gca()
 	datemajor = pltdates.DateFormatter('%Y')
 	dateminor = pltdates.DateFormatter('%m:%Y')
@@ -235,7 +246,7 @@ def multiplot(wadata, whdata, jwdata):
 
 #results_plot()
 #wh()
-wa()
+#wa()
 #jw()
-#multiplot(wa(), wh(), jw())
+multiplot(wa(), wh(), jw())
 
