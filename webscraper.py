@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 from matplotlib import dates as pltdates
 from matplotlib.ticker import AutoMinorLocator
 #from dateutil import parser
+import statistics as stat
 
 # Convert list to dict{}
 def Convert(lst):
@@ -223,18 +224,28 @@ def multiplot(wadata, whdata, jwdata):
 			jwplotstuff.append((pltdates.datestr2num(key) , float(value)))
 	jwdates = [x[0] for x in jwplotstuff]
 	jwvalues = [x[1] for x in jwplotstuff]
-
+	# All values for maths
+	allValues = wavalues + whvalues + jwvalues
+	meanValue = str("{:.2f}".format(float(stat.mean(allValues))))
+	maxValue = str(max(allValues))
+	minValue = str(min(allValues))
+	sdValue = str("{:.2f}".format(float(stat.stdev(allValues))))
+	nValue = str(len(allValues))
+	valuesString = "Mean: "+meanValue+"   sd: "+sdValue+"   Min: "+minValue+"   Max: "+maxValue
+	waLabel = "Whisky Auctioneer (n="+str(len(wavalues))+")"
+	whLabel = "Whisky Hammer (n="+str(len(whvalues))+")"
+	jwLabel = "Just Whisky (n="+str(len(jwvalues))+")"
 	plt.figure(figsize=(10,5))
-	plt.plot(wadates, wavalues, marker = 'x', color = 'b', label = 'Whisky Auctioneer')
-	plt.plot(whdates, whvalues, marker = '*', color = 'r', label = 'Whisky Hammer')
-	plt.plot(jwdates, jwvalues, marker = 'o', color = 'c', label = 'Just Whisky')
+	plt.plot(wadates, wavalues, marker = 'x', color = 'b', label = waLabel)
+	plt.plot(whdates, whvalues, marker = '*', color = 'r', label = whLabel)
+	plt.plot(jwdates, jwvalues, marker = 'o', color = 'c', label = jwLabel)
 	ax = plt.gca()
 	datemajor = pltdates.DateFormatter('%Y')
 	dateminor = pltdates.DateFormatter('%m:%Y')
 	ax.xaxis.set_major_formatter(datemajor)
 	ax.xaxis.set_minor_locator(AutoMinorLocator())
 	ax.xaxis.set_minor_formatter(dateminor)
-	ax.set_title(" Bottles: "+searchterm)
+	ax.set_title(" Bottles (n="+nValue+"): "+searchterm+"\n"+valuesString)
 	plt.xlabel('Date')
 	plt.xticks(rotation=90)
 	ax.tick_params(which='minor', length=6, rotation=90)
