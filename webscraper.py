@@ -175,6 +175,72 @@ def jw():
 	print ("JW Records: "+str(len(jwdata)))
 	return jwdata
 
+# Grand Whisky Auction search
+gwdata = {}
+def gw():
+
+	grandWhisky = {}
+	print ('\n'+'Getting Grand Whisky Auction data from page...')
+	# Find total number of pages - cannot get this easily so just try 30 pages until fail
+	for pageNumber in range(30):
+		print(pageNumber+1)
+		gw_url_page = "https://www.thegrandwhiskyauction.com/past-auctions/q-"+searchterm+"/page-"+str(pageNumber+1)+"/end-time"
+		gw_htmlcode = requests.get(gw_url_page).content
+		gw_data = BeautifulSoup(gw_htmlcode, 'html.parser')
+		gw_auctionlist = gw_data.find('div',{'class' : 'siteInnerWrapper'}).find_all('script')
+
+		gw_string = str(gw_auctionlist[1])
+		#print(gw_string[0:50])
+
+
+		# Regex for data from script tag
+		for bottle in gw_string.split('}},'):
+			tempdict = {}
+			#print(len(bottle))
+			#print(bottle)
+			id_data=[]
+			id_data = re.findall('\\"lot_id\\"\\:\\"\\d+\\"', bottle)
+			#print(str(id_data[0]))
+			#print(str(id_data[0]).split(':',1)[1])
+			try:
+				tempdict['lot'] = str(id_data[0]).split(':',1)[1]
+			except IndexError:
+				break
+			date_data =[]
+			date_data = re.findall('\\"updated_at\\"\\:\\"\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\"', bottle)
+			#print(str(date_data[-1]))
+			#print(datetime.strptime(str(date_data[-1]).split(':',1)[1].replace('"',''), '%Y-%m-%d %H:%M:%S').date())
+			tempdict['date'] = datetime.strptime(str(date_data[-1]).split(':',1)[1].replace('"',''), '%Y-%m-%d %H:%M:%S').date()
+
+			price_data =[]
+			price_data = re.findall('\\"bid_value\\"\\:\\"\\d+\\.\\d{2}\\"', bottle)
+			#print(str(price_data[0]))
+			#print(str(price_data[0]).split(':',1)[1])
+			tempdict['price'] = str(price_data[0]).split(':',1)[1].replace('"','')
+
+			name_data =[]
+			name_data = re.findall('\\"name\\"\\:\\".*?\\"\\,', bottle)
+			#print(str(name_data[0]))
+			#print(str(name_data[0]).split(':',1)[1])
+			tempdict['title'] = str(name_data[0]).split(':',1)[1]
+
+			tempkey = tempdict['lot']
+			newdict = {tempkey : tempdict}
+			grandWhisky.update(newdict)
+		else:
+			continue
+		break
+	#return print(len(grandWhisky))
+
+	print ("\n"+"Grand Whisky Auction:")
+	gwdata = {};
+	for bottle in grandWhisky:
+		#print (str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'], '%d\/%m\/%Y').date())+":"+whiskyHammer[bottle]['item_price']+":"+whiskyHammer[bottle]['name'])
+		gwdata.update({grandWhisky[bottle]['lot'] : {str(grandWhisky[bottle]['date']) : grandWhisky[bottle]['price']}})
+	#return results_plot(gwdata, 'Grand Whisky')
+	#print ("GW Records: "+str(len(gwdata)))
+	return gwdata
+
 
 def results_plot(bottlelist, auction):
 #	Plot data
@@ -201,7 +267,7 @@ def results_plot(bottlelist, auction):
 	plt.show()
 
 
-def multiplot(wadata, whdata, jwdata):
+def multiplot(wadata, whdata, jwdata, gwdata):
 	# Plot all lines on one plot
 	# WA data
 	waplotstuff = []
@@ -224,8 +290,16 @@ def multiplot(wadata, whdata, jwdata):
 			jwplotstuff.append((pltdates.datestr2num(key) , float(value)))
 	jwdates = [x[0] for x in jwplotstuff]
 	jwvalues = [x[1] for x in jwplotstuff]
+	# GW data
+	gwplotstuff = []
+	for k,v in gwdata.items():
+		for key,value in v.items():
+			gwplotstuff.append((pltdates.datestr2num(key) , float(value)))
+	gwdates = [x[0] for x in gwplotstuff]
+	gwvalues = [x[1] for x in gwplotstuff]
+
 	# All values for maths
-	allValues = wavalues + whvalues + jwvalues
+	allValues = wavalues + whvalues + jwvalues + gwvalues
 	meanValue = str("{:.2f}".format(float(stat.mean(allValues))))
 	maxValue = str(max(allValues))
 	minValue = str(min(allValues))
@@ -235,10 +309,12 @@ def multiplot(wadata, whdata, jwdata):
 	waLabel = "Whisky Auctioneer (n="+str(len(wavalues))+")"
 	whLabel = "Whisky Hammer (n="+str(len(whvalues))+")"
 	jwLabel = "Just Whisky (n="+str(len(jwvalues))+")"
+	gwLabel = "Grand Whisky Auction (n="+str(len(gwvalues))+")"
 	plt.figure(figsize=(10,5))
 	plt.plot(wadates, wavalues, marker = 'x', color = 'b', label = waLabel)
 	plt.plot(whdates, whvalues, marker = '*', color = 'r', label = whLabel)
 	plt.plot(jwdates, jwvalues, marker = 'o', color = 'c', label = jwLabel)
+	plt.plot(gwdates, gwvalues, marker = '+', color = 'g', label = gwLabel)
 	ax = plt.gca()
 	datemajor = pltdates.DateFormatter('%Y')
 	dateminor = pltdates.DateFormatter('%m:%Y')
@@ -259,5 +335,6 @@ def multiplot(wadata, whdata, jwdata):
 #wh()
 #wa()
 #jw()
-multiplot(wa(), wh(), jw())
+#gw()
+multiplot(wa(), wh(), jw(), gw())
 
