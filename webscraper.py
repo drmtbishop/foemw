@@ -178,20 +178,26 @@ def jw():
 # Grand Whisky Auction search
 gwdata = {}
 def gw():
-
+	# Change searchterm to include quotes and spaces
+	gwsearchterm = str(searchterm.replace('+', '&'))
 	grandWhisky = {}
 	print ('\n'+'Getting Grand Whisky Auction data from page...')
 	# Find total number of pages - cannot get this easily so just try 30 pages until fail
 	for pageNumber in range(30):
 		print(pageNumber+1)
-		gw_url_page = "https://www.thegrandwhiskyauction.com/past-auctions/q-"+searchterm+"/page-"+str(pageNumber+1)+"/end-time"
+		if pageNumber > 1:
+			gw_url_page = "https://www.thegrandwhiskyauction.com/past-auctions/q-"+gwsearchterm+"/page-"+str(pageNumber+1)+"/72-per-page/end-time"
+		else:
+			gw_url_page = "https://www.thegrandwhiskyauction.com/past-auctions/q-"+gwsearchterm+"/72-per-page/end-time"
 		gw_htmlcode = requests.get(gw_url_page).content
 		gw_data = BeautifulSoup(gw_htmlcode, 'html.parser')
-		gw_auctionlist = gw_data.find('div',{'class' : 'siteInnerWrapper'}).find_all('script')
-
+		try:
+			gw_auctionlist = gw_data.find('div',{'class' : 'siteInnerWrapper'}).find_all('script')
+		except AttributeError:
+			break
 		gw_string = str(gw_auctionlist[1])
 		#print(gw_string[0:50])
-
+		#print(gw_url_page)
 
 		# Regex for data from script tag
 		for bottle in gw_string.split('}},'):
@@ -238,7 +244,7 @@ def gw():
 		#print (str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'], '%d\/%m\/%Y').date())+":"+whiskyHammer[bottle]['item_price']+":"+whiskyHammer[bottle]['name'])
 		gwdata.update({grandWhisky[bottle]['lot'] : {str(grandWhisky[bottle]['date']) : grandWhisky[bottle]['price']}})
 	#return results_plot(gwdata, 'Grand Whisky')
-	#print ("GW Records: "+str(len(gwdata)))
+	print ("GW Records: "+str(len(gwdata)))
 	return gwdata
 
 
