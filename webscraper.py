@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-Scraping auction websites for bottle data
+Scraping whisky auction websites for bottle data
 '''
 
 
@@ -136,7 +136,7 @@ def wa():
 				continue
 			#break
 	#print (len(whiskyAuctioneer))
-	print ("\n"+"Scotch Whisky Auctions:")
+	print ("\n"+"Whisky Auctioneer:")
 	wadata = {};
 	for bottle in whiskyAuctioneer:
 		try:
@@ -307,7 +307,10 @@ def swa():
 		swa_url = "https://www.scotchwhiskyauctions.com/auctions/all/?q="+searchterm+"&search=a&page="+str(eachpage+1)
 		swa_htmlcode = requests.get(swa_url).content
 		swa_data = BeautifulSoup(swa_htmlcode, 'html.parser')
-		swa_auctionlist = swa_data.find('div', {'id':'lots'}).find_all('a')
+		try:
+			swa_auctionlist = swa_data.find('div', {'id':'lots'}).find_all('a')
+		except AttributeError:
+			break
 		#print (swa_auctionlist)
 		for entry in swa_auctionlist:
 			tempdict = {}
