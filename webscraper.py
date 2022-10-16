@@ -271,7 +271,8 @@ def gw():
 
 # Scotch Whisky Auctions search
 swadata = {}
-swaAuctionDict={
+# Dict of date lookups for auction dates. Key '000' catches those not on this list
+swaAuctionDict={'000' : '01-JAN-2015',
 '201' : '18-NOV-2017', '045' : '01-JAN-2015', '046' : '01-FEB-2015', '047' : '01-MAR-2015', '048' : '01-APR-2015', 
 '049' : '01-MAY-2015', '050' : '01-JUN-2015', '051' : '01-JUL-2015', '052' : '02-AUG-2015', '053' : '01-SEP-2015', 
 '054' : '01-OCT-2015', '055' : '01-NOV-2015', '056' : '06-DEC-2015', '057' : '01-JAN-2016', '058' : '07-FEB-2016', 
@@ -332,7 +333,11 @@ def swa():
 			tempkey = tempdict['lot']
 			#Date - comes from the lot id eg 127-01423 is the 127th auction so need a lookup dict of number:date
 			auctionNumber = str(tempdict['lot'][0:3])
-			tempdict['date'] = swaAuctionDict[auctionNumber]
+			try:
+				tempdict['date'] = swaAuctionDict[auctionNumber]
+			except KeyError:
+				auctionNumber = str('000')
+				tempdict['date'] = swaAuctionDict[auctionNumber]
 			#print (tempdict['date'])
 			newdict = {tempkey : tempdict}
 			scotchWhiskyAuctions.update(newdict)
