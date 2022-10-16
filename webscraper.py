@@ -30,7 +30,8 @@ searchterm = input("Search term: ").replace(" ","+");
 whdata = {}
 def wh():
 	whdata = {}
-	wh_url = "https://www.whiskyhammer.com/auction/past/q-"+searchterm+"/?sortby=end-time&ps=1000"
+	whsearchterm = searchterm.replace("+","-")
+	wh_url = "https://www.whiskyhammer.com/auction/past/q-"+whsearchterm+"/?sortby=end-time&ps=1000"
 	#wh_url = "https://www.whiskyhammer.com/auction/past/q-"+searchterm+"/"
 	wh_htmlcode = requests.get(wh_url).content
 	wh_data = BeautifulSoup(wh_htmlcode, 'html.parser')
@@ -39,8 +40,9 @@ def wh():
 	try:
 		wh_bottlelisttrim = wh_bottlelist.group()[1:-1]
 	except AttributeError:
-		return (print ('Whisky Hammer: No bottle found'))
-
+		#whdata['id'] = {'01-01-2020' : 0.0}
+		print ('\n'+'Whisky Hammer: No bottle found')
+		return whdata
 	whiskyHammer={}
 	for item in wh_bottlelisttrim.split("}"):
 		tempdict = {}
@@ -56,7 +58,7 @@ def wh():
 			whiskyHammer.update(newdict)
 	print ("\n"+"Whisky Hammer:")
 	#print (whiskyHammer)
-	whdata = {};
+	#whdata = {};
 	for bottle in whiskyHammer:
 #		print (str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'], '%d\/%m\/%Y').date())+":"+whiskyHammer[bottle]['item_price']+":"+whiskyHammer[bottle]['name'])
 		whdata.update({whiskyHammer[bottle]['id'] : {str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'],'%d\/%m\/%Y').date()) : whiskyHammer[bottle]['item_price']}})
@@ -68,6 +70,7 @@ def wh():
 # Whisky Auctioneer search
 wadata = {}
 def wa():
+	wadata = {}
 	wasearchterm = str(searchterm.replace('+', '%20'))
 	# Getting page by page data NOTE: page=1 is the second page
 	# wa_url_page = "https://whiskyauctioneer.com/auction-search?items_per_page=500&sort=field_reference_field_end_date%20DESC&text=daftmill&page=1"
@@ -106,8 +109,9 @@ def wa():
 		try:
 			wa_lotlist = wa_auctionlist.find_all('span')
 		except AttributeError:
-			print ("No such bottle - please try again")
-			sys.exit()
+			print ("Whisky Auctioneer: No bottle found")
+			return wadata
+			#sys.exit()
 		#print (len(wa_lotlist))
 		pagedict = {}
 		# Function to split list into chunks of 7
@@ -162,7 +166,7 @@ def jw():
 		jw_lastpage = int(jw_pagelist[-2].contents[0])
 	except IndexError:
 		jw_lastpage = 1
-	print ('Getting Just-Whisky data from '+str(jw_lastpage)+' total page(s)...')
+	print ('\n'+'Getting Just-Whisky data from '+str(jw_lastpage)+' total page(s)...')
 	justWhisky={}
 	tempdict={'lot':'','title':'','price':'','date':''}
 	for eachpage in range(jw_lastpage):
