@@ -73,36 +73,22 @@ def wa():
 	wadata = {}
 	wasearchterm = str(searchterm.replace('+', '%20'))
 	# Getting page by page data NOTE: page=1 is the second page
-	# wa_url_page = "https://whiskyauctioneer.com/auction-search?items_per_page=500&sort=field_reference_field_end_date%20DESC&text=daftmill&page=1"
-	#wa_url_page = "https://whiskyauctioneer.com/auction-search?text="+wasearchterm+"&sort=field_reference_field_end_date+DESC&items_per_page=500&f%5B0%5D=cask_type%3A41"
-	#wa_url_page = "https://whiskyauctioneer.com/auction-search?text="+searchterm+"&sort=field_reference_field_end_date%20DESC"
 	headers = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',}
 	wa_url_page = "https://whiskyauctioneer.com/auction-search?text="+wasearchterm
 	wa_htmlcode = requests.get(wa_url_page, headers = headers).content
-	#print (type(wa_htmlcode))
 	wa_data = BeautifulSoup(wa_htmlcode, 'html.parser')
-	#print (type(wa_data))
-
-	#print (wa_data.find('div',{'class':'item-list'}))
-	#.find('a', {'title':'Go to last page'})['href'])
 	try:
-		#wa_lastpage = int(wa_data.find('li', {'class':'pager-last last'}).find('a').get('href')[-1])
 		wa_lastpage = int(wa_data.find('li', {'class':'pager-last last'}).find('a').get('href').split('page=')[1])
 	except (IndexError, AttributeError):
 		wa_lastpage = 0
-	#print ('lastpage variable is: ',wa_lastpage)
 	print ('Getting Whisky Auctioneer data from '+str(wa_lastpage+1)+' total page(s)...')
 	# Loop through pages
 	whiskyAuctioneer={}
 	#tempdict={'lot':'','title':'','price':'','date':''}
 	for eachpage in range(wa_lastpage+1):
 		print (eachpage)
-		#wa_url = "https://whiskyauctioneer.com/auction-search?items_per_page=500&sort=field_reference_field_end_date%20DESC&text="+searchterm+"&page="+str(eachpage)
-		#wa_url = "https://whiskyauctioneer.com/auction-search?text="+searchterm+"&sort=field_reference_field_end_date+DESC&items_per_page=500&f%5B0%5D=cask_type%3A41&page="+str(eachpage)
 		wa_url = "https://whiskyauctioneer.com/auction-search?text="+wasearchterm+"&sort=field_reference_field_end_date+DESC&page="+str(eachpage)
-		#wa_url = "https://whiskyauctioneer.com/auction-search?text="+searchterm+"&sort=field_reference_field_end_date+DESC&items_per_page=500&f%5B0%5D=cask_type%3A41&page="+str(eachpage)
 		#print (wa_url)
-		#wa_url = "https://whiskyauctioneer.com/auction-search?text="+searchterm+"&sort=field_reference_field_end_date+DESC&items_per_page=500&f%5B0%5D=cask_type%3A41"
 		wa_htmlcode = requests.get(wa_url, headers = headers).content
 		wa_data = BeautifulSoup(wa_htmlcode, 'html.parser')
 		wa_auctionlist = wa_data.find('div', {'class':'view-content'})
@@ -111,37 +97,32 @@ def wa():
 		except AttributeError:
 			print ("Whisky Auctioneer: No bottle found")
 			return wadata
-			#sys.exit()
-		#print (len(wa_lotlist))
 		pagedict = {}
 		# Function to split list into chunks of 7
 		def chunker(seq, size):
-		    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+			return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 		for group in chunker (wa_lotlist, 7):
-			tempdict = {};
+			tempdict = {}
 			for label in group:
-				#print (label)
-				#tempdict = {}
 				if re.search('Current Bid:', str(label)):
-					break;
+					break
 				elif re.search('lotnumber', str(label)):
-					tempdict['lot']=label.get_text(strip=True)[4:];
-					tempkey = tempdict['lot'];
+					tempdict['lot']=label.get_text(strip=True)[4:]
+					tempkey = tempdict['lot']
 				elif re.search('protitle', str(label)):
-					tempdict['title']=label.get_text(strip=True);
+					tempdict['title']=label.get_text(strip=True)
 				elif re.search(u"\xA3", str(label)):
-					tempdict['price']= label.get_text().strip(u"\xA3").replace(',' , '');
+					tempdict['price']= label.get_text().strip(u"\xA3").replace(',' , '')
 				elif re.search('^\d\d\.\d\d', label.get_text(strip=True)):
-					tempdict['date'] = datetime.strptime(label.get_text(), '%d.%m.%y').date();
-				newdict = {tempkey : tempdict};
-				pagedict.update(newdict);
-				whiskyAuctioneer.update(pagedict);
+					tempdict['date'] = datetime.strptime(label.get_text(), '%d.%m.%y').date()
+				newdict = {tempkey : tempdict}
+				pagedict.update(newdict)
+				whiskyAuctioneer.update(pagedict)
 			else:
 				continue
-			#break
 	#print (len(whiskyAuctioneer))
 	print ("\n"+"Whisky Auctioneer:")
-	wadata = {};
+	wadata = {}
 	for bottle in whiskyAuctioneer:
 		try:
 			wadata.update({whiskyAuctioneer[bottle]['lot'] : {str(whiskyAuctioneer[bottle]['date']) : whiskyAuctioneer[bottle]['price']}})
@@ -218,38 +199,25 @@ def gw():
 		except AttributeError:
 			break
 		gw_string = str(gw_auctionlist[1])
-		#print(gw_string[0:50])
-		#print(gw_url_page)
-
 		# Regex for data from script tag
 		for bottle in gw_string.split('}},'):
 			tempdict = {}
-			#print(len(bottle))
-			#print(bottle)
 			id_data=[]
 			id_data = re.findall('\\"lot_id\\"\\:\\"\\d+\\"', bottle)
-			#print(str(id_data[0]))
-			#print(str(id_data[0]).split(':',1)[1])
 			try:
 				tempdict['lot'] = str(id_data[0]).split(':',1)[1]
 			except IndexError:
 				break
 			date_data =[]
 			date_data = re.findall('\\"updated_at\\"\\:\\"\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\"', bottle)
-			#print(str(date_data[-1]))
-			#print(datetime.strptime(str(date_data[-1]).split(':',1)[1].replace('"',''), '%Y-%m-%d %H:%M:%S').date())
 			tempdict['date'] = datetime.strptime(str(date_data[-1]).split(':',1)[1].replace('"',''), '%Y-%m-%d %H:%M:%S').date()
 
 			price_data =[]
 			price_data = re.findall('\\"bid_value\\"\\:\\"\\d+\\.\\d{2}\\"', bottle)
-			#print(str(price_data[0]))
-			#print(str(price_data[0]).split(':',1)[1])
 			tempdict['price'] = str(price_data[0]).split(':',1)[1].replace('"','')
 
 			name_data =[]
 			name_data = re.findall('\\"name\\"\\:\\".*?\\"\\,', bottle)
-			#print(str(name_data[0]))
-			#print(str(name_data[0]).split(':',1)[1])
 			tempdict['title'] = str(name_data[0]).split(':',1)[1]
 
 			tempkey = tempdict['lot']
@@ -258,7 +226,6 @@ def gw():
 		else:
 			continue
 		break
-	#return print(len(grandWhisky))
 
 	print ("\n"+"Grand Whisky Auction:")
 	gwdata = {};
