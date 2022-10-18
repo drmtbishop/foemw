@@ -23,8 +23,13 @@ import statistics as stat
 def Convert(lst):
     res_dct = {lst[i].strip('"'): lst[i + 1].strip('"') for i in range(0, len(lst), 2)}
     return res_dct
-# Search input
-searchterm = input("Search term: ").replace(" ","+");
+# Search input from script argument or if missing, then from input
+searchterm = ""
+if len(sys.argv) == 2:
+	searchterm = str(sys.argv[1]).replace(" ","+")
+else:
+	searchterm = input("Search term: ").replace(" ","+")
+
 
 # Whisky Hammer search
 whdata = {}
