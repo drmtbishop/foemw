@@ -41,7 +41,7 @@ def wh():
 	wh_htmlcode = requests.get(wh_url).content
 	wh_data = BeautifulSoup(wh_htmlcode, 'html.parser')
 	wh_auctionlist = wh_data.find('div', {'id':'browse'})
-	wh_bottlelist = re.search("\[\{.+\}\]", str(wh_auctionlist))
+	wh_bottlelist = re.search("\\[\\{.+\\}\\]", str(wh_auctionlist))
 	try:
 		wh_bottlelisttrim = wh_bottlelist.group()[1:-1]
 	except AttributeError:
@@ -66,7 +66,7 @@ def wh():
 	#whdata = {};
 	for bottle in whiskyHammer:
 #		print (str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'], '%d\/%m\/%Y').date())+":"+whiskyHammer[bottle]['item_price']+":"+whiskyHammer[bottle]['name'])
-		whdata.update({whiskyHammer[bottle]['id'] : {str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'],'%d\/%m\/%Y').date()) : whiskyHammer[bottle]['item_price']}})
+		whdata.update({whiskyHammer[bottle]['id'] : {str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'],'%d\\/%m\\/%Y').date()) : whiskyHammer[bottle]['item_price']}})
 	print ("WH Records: "+str(len(whdata)))
 	#return results_plot(whdata, 'Whisky Hammer')
 	return whdata
@@ -118,7 +118,7 @@ def wa():
 					tempdict['title']=label.get_text(strip=True)
 				elif re.search(u"\xA3", str(label)):
 					tempdict['price']= label.get_text().strip(u"\xA3").replace(',' , '')
-				elif re.search('^\d\d\.\d\d', label.get_text(strip=True)):
+				elif re.search('^\\d\\d\\.\\d\\d', label.get_text(strip=True)):
 					tempdict['date'] = datetime.strptime(label.get_text(), '%d.%m.%y').date()
 				newdict = {tempkey : tempdict}
 				pagedict.update(newdict)
