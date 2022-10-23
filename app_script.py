@@ -15,7 +15,7 @@ from matplotlib.ticker import AutoMinorLocator
 import statistics as stat
 
 # Single request session for speed
-#requests_session = requests.Session()
+requests_session = requests.Session()
 
 # Convert list to dict{}
 def Convert(lst):
@@ -36,7 +36,7 @@ def wh():
 	whsearchterm = searchterm.replace("+","-")
 	wh_url = "https://www.whiskyhammer.com/auction/past/q-"+whsearchterm+"/?sortby=end-time&ps=1000"
 	#wh_url = "https://www.whiskyhammer.com/auction/past/q-"+searchterm+"/"
-	wh_htmlcode = requests.get(wh_url).content
+	wh_htmlcode = requests_session.get(wh_url).content
 	wh_data = BeautifulSoup(wh_htmlcode, 'html.parser')
 	wh_auctionlist = wh_data.find('div', {'id':'browse'})
 	wh_bottlelist = re.search("\\[\\{.+\\}\\]", str(wh_auctionlist))
@@ -72,7 +72,7 @@ def wa():
 	# Getting page by page data NOTE: page=1 is the second page
 	headers = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',}
 	wa_url_page = "https://whiskyauctioneer.com/auction-search?text="+wasearchterm
-	wa_htmlcode = requests.get(wa_url_page, headers = headers).content
+	wa_htmlcode = requests_session.get(wa_url_page, headers = headers).content
 	wa_data = BeautifulSoup(wa_htmlcode, 'html.parser')
 	try:
 		wa_lastpage = int(wa_data.find('li', {'class':'pager-last last'}).find('a').get('href').split('page=')[1])
@@ -83,13 +83,12 @@ def wa():
 	#tempdict={'lot':'','title':'','price':'','date':''}
 	for eachpage in range(wa_lastpage+1):
 		wa_url = "https://whiskyauctioneer.com/auction-search?text="+wasearchterm+"&sort=field_reference_field_end_date+DESC&page="+str(eachpage)
-		wa_htmlcode = requests.get(wa_url, headers = headers).content
+		wa_htmlcode = requests_session.get(wa_url, headers = headers).content
 		wa_data = BeautifulSoup(wa_htmlcode, 'html.parser')
 		wa_auctionlist = wa_data.find('div', {'class':'view-content'})
 		try:
 			wa_lotlist = wa_auctionlist.find_all('span')
 		except AttributeError:
-			#print ("Whisky Auctioneer: No bottle found")
 			return wadata
 		pagedict = {}
 		# Function to split list into chunks of 7
@@ -128,7 +127,7 @@ jwdata = {}
 def jw():
 	# Find total number of pages
 	jw_url_page = "https://www.just-whisky.co.uk/search?controller=search&orderby=reference&orderway=desc&category=171&search_query="+searchterm+"&submit_search.x=0&submit_search.y=0"
-	jw_htmlcode = requests.get(jw_url_page).content
+	jw_htmlcode = requests_session.get(jw_url_page).content
 	jw_data = BeautifulSoup(jw_htmlcode, 'html.parser')
 	jw_pagelist = jw_data.find('div', {'id':'pagination'}).find_all('a')
 	try:
@@ -139,7 +138,7 @@ def jw():
 	tempdict={'lot':'','title':'','price':'','date':''}
 	for eachpage in range(jw_lastpage):
 		jw_url = "https://www.just-whisky.co.uk/search?controller=search&orderby=reference&orderway=desc&category=171&search_query="+searchterm+"&submit_search.x=0&submit_search.y=0&p="+str(eachpage+1)
-		jw_htmlcode = requests.get(jw_url).content
+		jw_htmlcode = requests_session.get(jw_url).content
 		jw_data = BeautifulSoup(jw_htmlcode, 'html.parser')
 		jw_auctionlist = jw_data.find_all('div', {'class':'auction_item'})
 		for entry in jw_auctionlist:
@@ -172,7 +171,7 @@ def gw():
 			gw_url_page = "https://www.thegrandwhiskyauction.com/past-auctions/q-"+gwsearchterm+"/page-"+str(pageNumber+1)+"/72-per-page/end-time"
 		else:
 			gw_url_page = "https://www.thegrandwhiskyauction.com/past-auctions/q-"+gwsearchterm+"/72-per-page/end-time"
-		gw_htmlcode = requests.get(gw_url_page).content
+		gw_htmlcode = requests_session.get(gw_url_page).content
 		gw_data = BeautifulSoup(gw_htmlcode, 'html.parser')
 		try:
 			gw_auctionlist = gw_data.find('div',{'class' : 'siteInnerWrapper'}).find_all('script')
@@ -215,29 +214,29 @@ def gw():
 
 # Scotch Whisky Auctions search
 swadata = {}
-# Dict of date lookups for auction dates. Key '000' catches those not on this list
-swaAuctionDict={'000' : '01-JAN-2015',
-'201' : '18-NOV-2017', '045' : '01-JAN-2015', '046' : '01-FEB-2015', '047' : '01-MAR-2015', '048' : '01-APR-2015', 
-'049' : '01-MAY-2015', '050' : '01-JUN-2015', '051' : '01-JUL-2015', '052' : '02-AUG-2015', '053' : '01-SEP-2015', 
-'054' : '01-OCT-2015', '055' : '01-NOV-2015', '056' : '06-DEC-2015', '057' : '01-JAN-2016', '058' : '07-FEB-2016', 
-'059' : '01-MAR-2016', '060' : '01-APR-2016', '061' : '01-MAY-2016', 
-'062' : '05-JUN-2016','063' : '06-JUL-2016', '064' : '07-AUG-2016', '065' : '04-SEP-2016', '066' : '02-OCT-2016',
-'067' : '06-NOV-2016', '068' : '04-DEC-2016', '069' : '03-JAN-2017', '070' : '05-FEB-2017', '071' : '05-MAR-2017', '072' : '02-APR-2017', 
-'073' : '07-MAY-2017', '074' : '04-JUN-2017', '075' : '02-JUL-2017', '076' : '06-AUG-2017', '077' : '03-SEP-2017', '078' : '01-OCT-2017', 
-'079' : '05-NOV-2017', '080' : '03-DEC-2017', '081' : '07-JAN-2018', '082' : '04-FEB-2018', '083' : '04-MAR-2018', '084' : '01-APR-2018', 
-'085' : '06-MAY-2018', '086' : '03-JUN-2018', '087' : '01-JUL-2018', '088' : '05-AUG-2018', '089' : '02-SEP-2018', '090' : '07-OCT-2018', 
-'091' : '04-NOV-2018', '092' : '02-DEC-2018', '093' : '06-JAN-2019', '094' : '03-FEB-2019', '095' : '03-MAR-2019', '096' : '07-APR-2019', 
-'097' : '05-MAY-2019', '098' : '02-JUN-2019', '099' : '07-JUL-2019', '100' : '04-AUG-2019', '101' : '01-SEP-2019', '102' : '06-OCT-2019', 
-'103' : '03-NOV-2019', '104' : '01-DEC-2019', '105' : '05-JAN-2020', '106' : '02-FEB-2020', '107' : '01-MAR-2020', '108' : '07-JUN-2020', 
-'109' : '05-JUL-2020', '110' : '02-AUG-2020', '111' : '06-SEP-2020', '112' : '04-OCT-2020', '113' : '01-NOV-2020', '114' : '06-DEC-2020', 
-'115' : '05-JAN-2021', '116' : '07-FEB-2021', '117' : '07-MAR-2021', '118' : '04-APR-2021', '119' : '02-MAY-2021', '120' : '06-JUN-2021', 
-'121' : '04-JUL-2021', '122' : '01-AUG-2021', '123' : '05-SEP-2021', '124' : '03-OCT-2021', '125' : '07-NOV-2021', '126' : '05-DEC-2021', 
-'127' : '09-JAN-2022', '128' : '13-FEB-2022', '129' : '13-MAR-2022', '130' : '10-APR-2022', '131' : '08-MAY-2022', '132' : '12-JUN-2022', 
-'133' : '10-JUL-2022', '134' : '14-AUG-2022', '135' : '11-SEP-2022', '136' : '09-OCT-2022'}
 def swa():
+	# Dict of date lookups for auction dates. Key '000' catches those not on this list
+	swaAuctionDict={'000' : '01-JAN-2015',
+	'201' : '18-NOV-2017', '045' : '01-JAN-2015', '046' : '01-FEB-2015', '047' : '01-MAR-2015', '048' : '01-APR-2015', 
+	'049' : '01-MAY-2015', '050' : '01-JUN-2015', '051' : '01-JUL-2015', '052' : '02-AUG-2015', '053' : '01-SEP-2015', 
+	'054' : '01-OCT-2015', '055' : '01-NOV-2015', '056' : '06-DEC-2015', '057' : '01-JAN-2016', '058' : '07-FEB-2016', 
+	'059' : '01-MAR-2016', '060' : '01-APR-2016', '061' : '01-MAY-2016', 
+	'062' : '05-JUN-2016','063' : '06-JUL-2016', '064' : '07-AUG-2016', '065' : '04-SEP-2016', '066' : '02-OCT-2016',
+	'067' : '06-NOV-2016', '068' : '04-DEC-2016', '069' : '03-JAN-2017', '070' : '05-FEB-2017', '071' : '05-MAR-2017', '072' : '02-APR-2017', 
+	'073' : '07-MAY-2017', '074' : '04-JUN-2017', '075' : '02-JUL-2017', '076' : '06-AUG-2017', '077' : '03-SEP-2017', '078' : '01-OCT-2017', 
+	'079' : '05-NOV-2017', '080' : '03-DEC-2017', '081' : '07-JAN-2018', '082' : '04-FEB-2018', '083' : '04-MAR-2018', '084' : '01-APR-2018', 
+	'085' : '06-MAY-2018', '086' : '03-JUN-2018', '087' : '01-JUL-2018', '088' : '05-AUG-2018', '089' : '02-SEP-2018', '090' : '07-OCT-2018', 
+	'091' : '04-NOV-2018', '092' : '02-DEC-2018', '093' : '06-JAN-2019', '094' : '03-FEB-2019', '095' : '03-MAR-2019', '096' : '07-APR-2019', 
+	'097' : '05-MAY-2019', '098' : '02-JUN-2019', '099' : '07-JUL-2019', '100' : '04-AUG-2019', '101' : '01-SEP-2019', '102' : '06-OCT-2019', 
+	'103' : '03-NOV-2019', '104' : '01-DEC-2019', '105' : '05-JAN-2020', '106' : '02-FEB-2020', '107' : '01-MAR-2020', '108' : '07-JUN-2020', 
+	'109' : '05-JUL-2020', '110' : '02-AUG-2020', '111' : '06-SEP-2020', '112' : '04-OCT-2020', '113' : '01-NOV-2020', '114' : '06-DEC-2020', 
+	'115' : '05-JAN-2021', '116' : '07-FEB-2021', '117' : '07-MAR-2021', '118' : '04-APR-2021', '119' : '02-MAY-2021', '120' : '06-JUN-2021', 
+	'121' : '04-JUL-2021', '122' : '01-AUG-2021', '123' : '05-SEP-2021', '124' : '03-OCT-2021', '125' : '07-NOV-2021', '126' : '05-DEC-2021', 
+	'127' : '09-JAN-2022', '128' : '13-FEB-2022', '129' : '13-MAR-2022', '130' : '10-APR-2022', '131' : '08-MAY-2022', '132' : '12-JUN-2022', 
+	'133' : '10-JUL-2022', '134' : '14-AUG-2022', '135' : '11-SEP-2022', '136' : '09-OCT-2022'}
 	# Find total number of pages
 	swa_url_page = "https://www.scotchwhiskyauctions.com/auctions/all/?q="+searchterm+"&search=a"
-	swa_htmlcode = requests.get(swa_url_page).content
+	swa_htmlcode = requests_session.get(swa_url_page).content
 	swa_data = BeautifulSoup(swa_htmlcode, 'html.parser')
 	swa_pagelist = swa_data.find('div', {'id':'lotswrap'}).find('h3').text
 	swa_lastpage = int(int(swa_pagelist.split(' ',2)[1])/20)+1
@@ -246,7 +245,7 @@ def swa():
 	tempdict={'lot':'','title':'','price':'','date':''}
 	for eachpage in range(swa_lastpage):
 		swa_url = "https://www.scotchwhiskyauctions.com/auctions/all/?q="+searchterm+"&search=a&page="+str(eachpage+1)
-		swa_htmlcode = requests.get(swa_url).content
+		swa_htmlcode = requests_session.get(swa_url).content
 		swa_data = BeautifulSoup(swa_htmlcode, 'html.parser')
 		try:
 			swa_auctionlist = swa_data.find('div', {'id':'lots'}).find_all('a')
@@ -273,11 +272,10 @@ def swa():
 		else:
 			continue
 		break
-	swadata = {};
+	swadata = {}
 	for bottle in scotchWhiskyAuctions:
 		swadata.update({scotchWhiskyAuctions[bottle]['lot'] : {str(scotchWhiskyAuctions[bottle]['date']) : scotchWhiskyAuctions[bottle]['price']}})
 	return swadata
-
 
 def multiplot(wadata, whdata, jwdata, gwdata, swadata):
 	# Plot all lines on one plot
