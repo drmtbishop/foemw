@@ -35,7 +35,6 @@ def wh():
 	whdata = {}
 	whsearchterm = searchterm.replace("+","-")
 	wh_url = "https://www.whiskyhammer.com/auction/past/q-"+whsearchterm+"/?sortby=end-time&ps=1000"
-	#wh_url = "https://www.whiskyhammer.com/auction/past/q-"+searchterm+"/"
 	wh_htmlcode = requests_session.get(wh_url).content
 	wh_data = BeautifulSoup(wh_htmlcode, 'html.parser')
 	wh_auctionlist = wh_data.find('div', {'id':'browse'})
@@ -43,8 +42,6 @@ def wh():
 	try:
 		wh_bottlelisttrim = wh_bottlelist.group()[1:-1]
 	except AttributeError:
-		#whdata['id'] = {'01-01-2020' : 0.0}
-		#print ('\n'+'Whisky Hammer: No bottle found')
 		return whdata
 	whiskyHammer={}
 	for item in wh_bottlelisttrim.split("}"):
@@ -80,7 +77,6 @@ def wa():
 		wa_lastpage = 0
 	# Loop through pages
 	whiskyAuctioneer={}
-	#tempdict={'lot':'','title':'','price':'','date':''}
 	for eachpage in range(wa_lastpage+1):
 		wa_url = "https://whiskyauctioneer.com/auction-search?text="+wasearchterm+"&sort=field_reference_field_end_date+DESC&page="+str(eachpage)
 		wa_htmlcode = requests_session.get(wa_url, headers = headers).content
@@ -154,7 +150,7 @@ def jw():
 			newdict = {tempkey : tempdict}
 			justWhisky.update(newdict)
 
-	jwdata = {};
+	jwdata = {}
 	for bottle in justWhisky:
 		jwdata.update({justWhisky[bottle]['lot'] : {str(justWhisky[bottle]['date']) : justWhisky[bottle]['price']}})
 	return jwdata
@@ -206,7 +202,7 @@ def gw():
 			continue
 		break
 
-	gwdata = {};
+	gwdata = {}
 	for bottle in grandWhisky:
 		#print (str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'], '%d\/%m\/%Y').date())+":"+whiskyHammer[bottle]['item_price']+":"+whiskyHammer[bottle]['name'])
 		gwdata.update({grandWhisky[bottle]['lot'] : {str(grandWhisky[bottle]['date']) : grandWhisky[bottle]['price']}})
