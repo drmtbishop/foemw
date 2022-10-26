@@ -13,6 +13,9 @@ import matplotlib.pyplot as plt
 from matplotlib import dates as pltdates
 from matplotlib.ticker import AutoMinorLocator
 import statistics as stat
+from progress.bar import Bar
+
+bar = Bar('Processing', max=10, suffix='%(percent)d%% - Time Remaining %(eta_td)s')
 
 # Single request session for speed
 requests_session = requests.Session()
@@ -44,6 +47,7 @@ def wh():
 	except AttributeError:
 		return whdata
 	whiskyHammer={}
+	bar.next()
 	for item in wh_bottlelisttrim.split("}"):
 		tempdict = {}
 		for each in item.split(","):
@@ -58,6 +62,7 @@ def wh():
 			whiskyHammer.update(newdict)
 	for bottle in whiskyHammer:
 		whdata.update({whiskyHammer[bottle]['id'] : {str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'],'%d\\/%m\\/%Y').date()) : whiskyHammer[bottle]['item_price']}})
+	bar.next()
 	return whdata
 
 
@@ -76,6 +81,7 @@ def wa():
 	except (IndexError, AttributeError):
 		wa_lastpage = 0
 	# Loop through pages
+	bar.next()
 	whiskyAuctioneer={}
 	for eachpage in range(wa_lastpage+1):
 		wa_url = "https://whiskyauctioneer.com/auction-search?text="+wasearchterm+"&sort=field_reference_field_end_date+DESC&page="+str(eachpage)
@@ -115,6 +121,7 @@ def wa():
 			wadata.update({whiskyAuctioneer[bottle]['lot'] : {str(whiskyAuctioneer[bottle]['date']) : whiskyAuctioneer[bottle]['price']}})
 		except KeyError:
 			continue
+	bar.next()
 	return wadata
 
 
@@ -131,6 +138,7 @@ def jw():
 	except IndexError:
 		jw_lastpage = 1
 	justWhisky={}
+	bar.next()
 	tempdict={'lot':'','title':'','price':'','date':''}
 	for eachpage in range(jw_lastpage):
 		jw_url = "https://www.just-whisky.co.uk/search?controller=search&orderby=reference&orderway=desc&category=171&search_query="+searchterm+"&submit_search.x=0&submit_search.y=0&p="+str(eachpage+1)
@@ -153,6 +161,7 @@ def jw():
 	jwdata = {}
 	for bottle in justWhisky:
 		jwdata.update({justWhisky[bottle]['lot'] : {str(justWhisky[bottle]['date']) : justWhisky[bottle]['price']}})
+	bar.next()
 	return jwdata
 
 # Grand Whisky Auction search
@@ -175,6 +184,7 @@ def gw():
 			break
 		gw_string = str(gw_auctionlist[1])
 		# Regex for data from script tag
+		bar.next()
 		for bottle in gw_string.split('}},'):
 			tempdict = {}
 			id_data=[]
@@ -206,6 +216,7 @@ def gw():
 	for bottle in grandWhisky:
 		#print (str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'], '%d\/%m\/%Y').date())+":"+whiskyHammer[bottle]['item_price']+":"+whiskyHammer[bottle]['name'])
 		gwdata.update({grandWhisky[bottle]['lot'] : {str(grandWhisky[bottle]['date']) : grandWhisky[bottle]['price']}})
+	bar.next()
 	return gwdata
 
 # Scotch Whisky Auctions search
@@ -236,7 +247,7 @@ def swa():
 	swa_data = BeautifulSoup(swa_htmlcode, 'html.parser')
 	swa_pagelist = swa_data.find('div', {'id':'lotswrap'}).find('h3').text
 	swa_lastpage = int(int(swa_pagelist.split(' ',2)[1])/20)+1
-
+	bar.next()
 	scotchWhiskyAuctions={}
 	tempdict={'lot':'','title':'','price':'','date':''}
 	for eachpage in range(swa_lastpage):
@@ -271,6 +282,7 @@ def swa():
 	swadata = {}
 	for bottle in scotchWhiskyAuctions:
 		swadata.update({scotchWhiskyAuctions[bottle]['lot'] : {str(scotchWhiskyAuctions[bottle]['date']) : scotchWhiskyAuctions[bottle]['price']}})
+	bar.next()
 	return swadata
 
 def multiplot(wadata, whdata, jwdata, gwdata, swadata):
@@ -312,7 +324,7 @@ def multiplot(wadata, whdata, jwdata, gwdata, swadata):
 			swaplotstuff.append((pltdates.datestr2num(key) , float(value)))
 	swadates = [x[0] for x in swaplotstuff]
 	swavalues = [x[1] for x in swaplotstuff]
-
+	bar.next()
 	# All values for maths
 	allValues = wavalues + whvalues + jwvalues + gwvalues + swavalues
 	meanValue = str("{:.2f}".format(float(stat.mean(allValues))))
@@ -348,5 +360,10 @@ def multiplot(wadata, whdata, jwdata, gwdata, swadata):
 	plt.savefig('results.png')
 	plt.show()
 
+def close():
+    requests_session.close()
+
 if __name__ == '__main__':
     multiplot(wa(), wh(), jw(), gw(), swa())
+    close()
+bar.finish()
