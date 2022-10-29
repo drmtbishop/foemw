@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 Scraping whisky auction websites for bottle data
+using numpy instead of plotting
 '''
 import requests
 from bs4 import BeautifulSoup
@@ -13,6 +14,7 @@ import matplotlib.pyplot as plt
 from matplotlib import dates as pltdates
 from matplotlib.ticker import AutoMinorLocator
 import statistics as stat
+import numpy as np
 from progress.bar import Bar
 #from progress.spinner import Spinner
 
@@ -329,6 +331,10 @@ def multiplot(wadata, whdata, jwdata, gwdata, swadata):
 	bar.next()
 	# All values for maths
 	allValues = wavalues + whvalues + jwvalues + gwvalues + swavalues
+    # numpy array for calculations
+	npvalues = np.array(allValues)
+	return print('\n','Array Size:',npvalues.size)
+	'''
 	meanValue = str("{:.2f}".format(float(stat.mean(allValues))))
 	maxValue = str(max(allValues))
 	minValue = str(min(allValues))
@@ -340,27 +346,8 @@ def multiplot(wadata, whdata, jwdata, gwdata, swadata):
 	jwLabel = "Just Whisky (n="+str(len(jwvalues))+")"
 	gwLabel = "Grand Whisky Auction (n="+str(len(gwvalues))+")"
 	swaLabel = "Scotch Whisky Auctions (n="+str(len(swavalues))+")"
-	plt.figure(figsize=(10,5))
-	plt.scatter(wadates, wavalues, marker = 'x', color = 'b', label = waLabel)
-	plt.scatter(whdates, whvalues, marker = '*', color = 'r', label = whLabel)
-	plt.scatter(jwdates, jwvalues, marker = 'o', color = 'c', label = jwLabel)
-	plt.scatter(gwdates, gwvalues, marker = '+', color = 'g', label = gwLabel)
-	plt.scatter(swadates, swavalues, marker = 'v', color = 'y', label = swaLabel)
-	ax = plt.gca()
-	datemajor = pltdates.DateFormatter('%Y')
-	dateminor = pltdates.DateFormatter('%m:%Y')
-	ax.xaxis.set_major_formatter(datemajor)
-	ax.xaxis.set_minor_locator(AutoMinorLocator())
-	ax.xaxis.set_minor_formatter(dateminor)
-	ax.set_title(" Bottles (n="+nValue+"): "+searchterm+"\n"+valuesString)
-	plt.xlabel('Date')
-	plt.xticks(rotation=90)
-	ax.tick_params(which='minor', length=6, rotation=90)
-	ax.legend()
-	plt.ylabel('Price (£)')
-	plt.tight_layout()
-	plt.savefig('results.png')
-	plt.show()
+	'''
+
 
 def close():
     requests_session.close()
