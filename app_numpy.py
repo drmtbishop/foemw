@@ -4,16 +4,17 @@
 Scraping whisky auction websites for bottle data
 using numpy instead of plotting
 '''
+#from math import isqrt
 import requests
 from bs4 import BeautifulSoup
 import re
 import html
 import sys
 from datetime import datetime
-import matplotlib.pyplot as plt
-from matplotlib import dates as pltdates
-from matplotlib.ticker import AutoMinorLocator
-import statistics as stat
+#import matplotlib.pyplot as plt
+#from matplotlib import dates as pltdates
+#from matplotlib.ticker import AutoMinorLocator
+#import statistics as stat
 import numpy as np
 from progress.bar import Bar
 #from progress.spinner import Spinner
@@ -38,8 +39,10 @@ else:
 
 # Whisky Hammer search
 whdata = {}
+whdatalist=[]
 def wh():
 	whdata = {}
+	whdatalist=[]
 	whsearchterm = searchterm.replace("+","-")
 	wh_url = "https://www.whiskyhammer.com/auction/past/q-"+whsearchterm+"/?sortby=end-time&ps=1000"
 	wh_htmlcode = requests_session.get(wh_url).content
@@ -66,14 +69,17 @@ def wh():
 			whiskyHammer.update(newdict)
 	for bottle in whiskyHammer:
 		whdata.update({whiskyHammer[bottle]['id'] : {str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'],'%d\\/%m\\/%Y').date()) : whiskyHammer[bottle]['item_price']}})
+		whdatalist.append(float(whiskyHammer[bottle]['item_price']))
 	bar.next()
-	return whdata
-
+	#return whdata, whdatalist
+	return whdatalist
 
 # Whisky Auctioneer search
 wadata = {}
+wadatalist=[]
 def wa():
 	wadata = {}
+	wadatalist=[]
 	wasearchterm = str(searchterm.replace('+', '%20'))
 	# Getting page by page data NOTE: page=1 is the second page
 	headers = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',}
@@ -123,15 +129,18 @@ def wa():
 	for bottle in whiskyAuctioneer:
 		try:
 			wadata.update({whiskyAuctioneer[bottle]['lot'] : {str(whiskyAuctioneer[bottle]['date']) : whiskyAuctioneer[bottle]['price']}})
+			wadatalist.append(float(whiskyAuctioneer[bottle]['price']))
 		except KeyError:
 			continue
 	bar.next()
-	return wadata
-
+	#return wadata, wadatalist
+	return wadatalist
 
 # Just Whisky search
 jwdata = {}
+jwdatalist=[]
 def jw():
+	jwdatalist=[]
 	# Find total number of pages
 	jw_url_page = "https://www.just-whisky.co.uk/search?controller=search&orderby=reference&orderway=desc&category=171&search_query="+searchterm+"&submit_search.x=0&submit_search.y=0"
 	jw_htmlcode = requests_session.get(jw_url_page).content
@@ -165,12 +174,16 @@ def jw():
 	jwdata = {}
 	for bottle in justWhisky:
 		jwdata.update({justWhisky[bottle]['lot'] : {str(justWhisky[bottle]['date']) : justWhisky[bottle]['price']}})
+		jwdatalist.append(float(justWhisky[bottle]['price']))
 	bar.next()
-	return jwdata
+	#return jwdata, jwdatalist
+	return jwdatalist
 
 # Grand Whisky Auction search
 gwdata = {}
+gwdatalist=[]
 def gw():
+	gwdatalist=[]
 	# Change searchterm to include quotes and spaces
 	gwsearchterm = str(searchterm.replace('+', '&'))
 	grandWhisky = {}
@@ -220,12 +233,16 @@ def gw():
 	for bottle in grandWhisky:
 		#print (str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'], '%d\/%m\/%Y').date())+":"+whiskyHammer[bottle]['item_price']+":"+whiskyHammer[bottle]['name'])
 		gwdata.update({grandWhisky[bottle]['lot'] : {str(grandWhisky[bottle]['date']) : grandWhisky[bottle]['price']}})
+		gwdatalist.append(float(grandWhisky[bottle]['price']))
 	bar.next()
-	return gwdata
+	#return gwdata, gwdatalist
+	return gwdatalist
 
 # Scotch Whisky Auctions search
 swadata = {}
+swadatalist=[]
 def swa():
+	swadatalist=[]
 	# Dict of date lookups for auction dates. Key '000' catches those not on this list
 	swaAuctionDict={'000' : '01-JAN-2015',
 	'201' : '18-NOV-2017', '045' : '01-JAN-2015', '046' : '01-FEB-2015', '047' : '01-MAR-2015', '048' : '01-APR-2015', 
@@ -286,73 +303,46 @@ def swa():
 	swadata = {}
 	for bottle in scotchWhiskyAuctions:
 		swadata.update({scotchWhiskyAuctions[bottle]['lot'] : {str(scotchWhiskyAuctions[bottle]['date']) : scotchWhiskyAuctions[bottle]['price']}})
+		swadatalist.append(float(scotchWhiskyAuctions[bottle]['price']))
 	bar.next()
-	return swadata
+	#return swadata, swadatalist
+	return swadatalist
 
-def multiplot(wadata, whdata, jwdata, gwdata, swadata):
-	# Plot all lines on one plot
-	# WA data
-	waplotstuff = []
-	for k,v in wadata.items():
-		for key,value in v.items():
-			waplotstuff.append((pltdates.datestr2num(key) , float(value)))
-	wadates = [x[0] for x in waplotstuff]
-	wavalues = [x[1] for x in waplotstuff]
+def npstats(wadatalist, whdatalist, jwdatalist, gwdatalist, swadatalist):
+	# Numpy stats
+	# First concantenate lists
+	npvaluesList = wadatalist + whdatalist + jwdatalist + gwdatalist + swadatalist
+	#print (npvaluesList)
+	# Then create np array
+	npvalues = np.array(npvaluesList)
+	uq = np.percentile(npvalues, 75)
+	lq = np.percentile(npvalues, 25)
+	iqr = uq - lq
+	ub = uq + 1.5 * iqr
+	lb = lq - 1.5 * iqr
+	trim_data = npvalues[npvalues < ub]
+	trim_data = npvalues[npvalues > lb]
 
-	# WH data
-	whplotstuff = []
-	for k,v in whdata.items():
-		for key,value in v.items():
-			whplotstuff.append((pltdates.datestr2num(key) , float(value)))
-	whdates = [x[0] for x in whplotstuff]
-	whvalues = [x[1] for x in whplotstuff]
-
-	# JW data
-	jwplotstuff = []
-	for k,v in jwdata.items():
-		for key,value in v.items():
-			jwplotstuff.append((pltdates.datestr2num(key) , float(value)))
-	jwdates = [x[0] for x in jwplotstuff]
-	jwvalues = [x[1] for x in jwplotstuff]
-	# GW data
-	gwplotstuff = []
-	for k,v in gwdata.items():
-		for key,value in v.items():
-			gwplotstuff.append((pltdates.datestr2num(key) , float(value)))
-	gwdates = [x[0] for x in gwplotstuff]
-	gwvalues = [x[1] for x in gwplotstuff]
-	# SWA data
-	swaplotstuff = []
-	for k,v in swadata.items():
-		for key,value in v.items():
-			swaplotstuff.append((pltdates.datestr2num(key) , float(value)))
-	swadates = [x[0] for x in swaplotstuff]
-	swavalues = [x[1] for x in swaplotstuff]
-	bar.next()
-	# All values for maths
-	allValues = wavalues + whvalues + jwvalues + gwvalues + swavalues
-    # numpy array for calculations
-	npvalues = np.array(allValues)
-	return print('\n','Array Size:',npvalues.size)
-	'''
-	meanValue = str("{:.2f}".format(float(stat.mean(allValues))))
-	maxValue = str(max(allValues))
-	minValue = str(min(allValues))
-	sdValue = str("{:.2f}".format(float(stat.stdev(allValues))))
-	nValue = str(len(allValues))
-	valuesString = "Mean: "+meanValue+"   sd: "+sdValue+"   Min: "+minValue+"   Max: "+maxValue
-	waLabel = "Whisky Auctioneer (n="+str(len(wavalues))+")"
-	whLabel = "Whisky Hammer (n="+str(len(whvalues))+")"
-	jwLabel = "Just Whisky (n="+str(len(jwvalues))+")"
-	gwLabel = "Grand Whisky Auction (n="+str(len(gwvalues))+")"
-	swaLabel = "Scotch Whisky Auctions (n="+str(len(swavalues))+")"
-	'''
-
+	print('\n\n','BOTTLE STATS','\n'
+	'Search Term: ',searchterm,'\n'
+	'Number of Bottles: ',npvalues.size,'\n'
+	'Minimum Price: ',np.min(npvalues),'\n'
+	'Max Price: ',np.max(npvalues),'\n'
+	'Overall Median Price: ',np.median(npvalues),'\n'
+    'Upper Quartile: ', np.percentile(npvalues, 75),'\n'
+	'Lower Quartile: ', np.percentile(npvalues, 25),'\n'
+	'Interquartile Range: ',iqr,'\n'
+	'Upper Bound: ',ub,'\n'
+	'Lower Bound: ',lb,'\n'
+	'Number of trimmed outliers: ',len(npvalues)-len(trim_data),'\n'
+	'Median Price (IQR trimmed): ',np.median(trim_data),'\n'
+	)
 
 def close():
     requests_session.close()
 
 if __name__ == '__main__':
-    multiplot(wa(), wh(), jw(), gw(), swa())
-    close()
+	#multiplot(wa(), wh(), jw(), gw(), swa())
+	npstats(wa(), wh(), jw(), gw(), swa())
+	close()
 bar.finish()
