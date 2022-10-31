@@ -18,9 +18,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from progress.bar import Bar
-#from progress.spinner import Spinner
 
-#bar = Spinner('Processing')
 bar = Bar('>>', max=(11), suffix='Left %(eta_td)s')
 
 # Single request session for speed
@@ -38,122 +36,168 @@ else:
 	searchterm = input("Search term: ").replace(" ","+")
 
 # Create pandas array to collect all data
+'''
 giantpandadata = {
     'auctionhouse': pd.Series(dtype='str'), 
     'lotid': pd.Series(dtype='str'), 
     'bottlename': pd.Series(dtype='str'), 
-    'saledate': pd.Series(dtype='datetime[ns]'), 
+    'saledate': pd.Series(dtype='datetime64[ns]'), 
     'hammerprice': pd.Series(dtype='float')}
 giantPanda = pd.DataFrame(giantpandadata)
 
-'''
 Adding new row to pd
 new_row = {
     'auctionhouse':'wa', 'lotid':'123abc', 
     'bottlename':'Daftmill 15', 'saledate':'2022-06-27', 
     'hammerprice':150.00}
 giantPanda = giantPanda.append(new_row, ignore_index=True)
+
+AIM
+For each auctionhouse create list of dictionaries and then update by appending
+eg
+df_update = df_current.append(df_new, ignore_index=True)
 '''
+
+giantPandadata = {
+    'auctionhouse': pd.Series(dtype='str'), 
+    'lotid': pd.Series(dtype='str'), 
+    'bottlename': pd.Series(dtype='str'), 
+    'saledate': pd.Series(dtype='datetime64[ns]'), 
+    'hammerprice': pd.Series(dtype='float')}
+giantPanda = pd.DataFrame(giantPandadata)
+
+def pandaUpdate(giantPandaWH, giantPandaWA):
+    # use for creating final panda
+    giantPandaFinal = pd.concat([giantPandaWH,giantPandaWA], ignore_index=True)
+    #giantPanda2 = giantPanda1.append(giantPandaWA, ignore_index=True)
+    print(giantPandaFinal.describe())
+    return
+
 
 # Whisky Hammer search
 whdata = {}
-whdatalist=[]
+#whdatalist=[]
 def wh():
-	whdata = {}
-	whdatalist=[]
-	whsearchterm = searchterm.replace("+","-")
-	wh_url = "https://www.whiskyhammer.com/auction/past/q-"+whsearchterm+"/?sortby=end-time&ps=1000"
-	wh_htmlcode = requests_session.get(wh_url).content
-	wh_data = BeautifulSoup(wh_htmlcode, 'html.parser')
-	wh_auctionlist = wh_data.find('div', {'id':'browse'})
-	wh_bottlelist = re.search("\\[\\{.+\\}\\]", str(wh_auctionlist))
-	try:
-		wh_bottlelisttrim = wh_bottlelist.group()[1:-1]
-	except AttributeError:
-		return whdata
-	whiskyHammer={}
-	bar.next()
-	for item in wh_bottlelisttrim.split("}"):
-		tempdict = {}
-		for each in item.split(","):
-			part = html.unescape(each.strip('"{'))
-			keyvalue = part.strip('{"').split(':',1)
-			try:
-				tempdict[keyvalue[0].strip('"')] = keyvalue[1].strip('"')
-			except IndexError:
-				continue
-			tempkey = tempdict['id']
-			newdict = {tempkey : tempdict}
-			whiskyHammer.update(newdict)
-	for bottle in whiskyHammer:
-		whdata.update({whiskyHammer[bottle]['id'] : {str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'],'%d\\/%m\\/%Y').date()) : whiskyHammer[bottle]['item_price']}})
-		whdatalist.append(float(whiskyHammer[bottle]['item_price']))
-		bignumpy = bignumpy.append()
-	bar.next()
+    whdata = {}
+    #whdatalist=[]
+    whpandalist= []
+    whsearchterm = searchterm.replace("+","-")
+    wh_url = "https://www.whiskyhammer.com/auction/past/q-"+whsearchterm+"/?sortby=end-time&ps=1000"
+    wh_htmlcode = requests_session.get(wh_url).content
+    wh_data = BeautifulSoup(wh_htmlcode, 'html.parser')
+    wh_auctionlist = wh_data.find('div', {'id':'browse'})
+    wh_bottlelist = re.search("\\[\\{.+\\}\\]", str(wh_auctionlist))
+    try:
+        wh_bottlelisttrim = wh_bottlelist.group()[1:-1]
+    except AttributeError:
+        return giantPanda
+    whiskyHammer={}
+    bar.next()
+    for item in wh_bottlelisttrim.split("}"):
+        tempdict = {}
+        for each in item.split(","):
+            part = html.unescape(each.strip('"{'))
+            keyvalue = part.strip('{"').split(':',1)
+            try:
+                tempdict[keyvalue[0].strip('"')] = keyvalue[1].strip('"')
+            except IndexError:
+                continue
+            tempkey = tempdict['id']
+            newdict = {tempkey : tempdict}
+            whiskyHammer.update(newdict)
+    #print (whiskyHammer)
+    for bottle in whiskyHammer:
+        #whdata.update({whiskyHammer[bottle]['id'] : {str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'],'%d\\/%m\\/%Y').date()) : whiskyHammer[bottle]['item_price']}})
+        whpandalist.append({
+        'auctionhouse':'wh', 
+        'lotid': whiskyHammer[bottle]['id'],
+        'bottlename': whiskyHammer[bottle]['name'],
+        'saledate': str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'],'%d\\/%m\\/%Y').date()),
+        'hammerprice': whiskyHammer[bottle]['item_price']
+        })
+        #whdatalist.append(float(whiskyHammer[bottle]['item_price']))
+        #bignumpy = bignumpy.append()
+    bar.next()
 	#return whdata, whdatalist
-	return whdatalist
+    #print(whpandalist)
+    giantPandaWH = pd.DataFrame(whpandalist)
+    #giantPandaWH = pd.concat([giantPandaWHdata,giantPanda], ignore_index=True)
+    #print(type(giantPandaWH))
+    #print(giantPandaWH['bottlename'].to_string(index=False))
+    return giantPandaWH
 
 # Whisky Auctioneer search
 wadata = {}
-wadatalist=[]
+#wadatalist=[]
 def wa():
-	wadata = {}
-	wadatalist=[]
-	wasearchterm = str(searchterm.replace('+', '%20'))
+    wadata = {}
+    #wadatalist=[]
+    wapandalist=[]
+    wasearchterm = str(searchterm.replace('+', '%20'))
 	# Getting page by page data NOTE: page=1 is the second page
-	headers = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',}
-	wa_url_page = "https://whiskyauctioneer.com/auction-search?text="+wasearchterm
-	wa_htmlcode = requests_session.get(wa_url_page, headers = headers).content
-	wa_data = BeautifulSoup(wa_htmlcode, 'html.parser')
-	try:
-		wa_lastpage = int(wa_data.find('li', {'class':'pager-last last'}).find('a').get('href').split('page=')[1])
-	except (IndexError, AttributeError):
-		wa_lastpage = 0
+    headers = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',}
+    wa_url_page = "https://whiskyauctioneer.com/auction-search?text="+wasearchterm
+    wa_htmlcode = requests_session.get(wa_url_page, headers = headers).content
+    wa_data = BeautifulSoup(wa_htmlcode, 'html.parser')
+    try:
+        wa_lastpage = int(wa_data.find('li', {'class':'pager-last last'}).find('a').get('href').split('page=')[1])
+    except (IndexError, AttributeError):
+        wa_lastpage = 0
 	# Loop through pages
-	bar.next()
-	whiskyAuctioneer={}
-	for eachpage in range(wa_lastpage+1):
-		wa_url = "https://whiskyauctioneer.com/auction-search?text="+wasearchterm+"&sort=field_reference_field_end_date+DESC&page="+str(eachpage)
-		wa_htmlcode = requests_session.get(wa_url, headers = headers).content
-		wa_data = BeautifulSoup(wa_htmlcode, 'html.parser')
-		wa_auctionlist = wa_data.find('div', {'class':'view-content'})
-		try:
-			wa_lotlist = wa_auctionlist.find_all('span')
-		except AttributeError:
-			return wadata
-		pagedict = {}
+    bar.next()
+    whiskyAuctioneer={}
+    for eachpage in range(wa_lastpage+1):
+        wa_url = "https://whiskyauctioneer.com/auction-search?text="+wasearchterm+"&sort=field_reference_field_end_date+DESC&page="+str(eachpage)
+        wa_htmlcode = requests_session.get(wa_url, headers = headers).content
+        wa_data = BeautifulSoup(wa_htmlcode, 'html.parser')
+        wa_auctionlist = wa_data.find('div', {'class':'view-content'})
+        try:
+            wa_lotlist = wa_auctionlist.find_all('span')
+        except AttributeError:
+            return wadata
+        pagedict = {}
 		# Function to split list into chunks of 7
-		def chunker(seq, size):
-			return (seq[pos:pos + size] for pos in range(0, len(seq), size))
-		for group in chunker (wa_lotlist, 7):
-			tempdict = {}
-			for label in group:
-				if re.search('Current Bid:', str(label)):
-					break
-				elif re.search('lotnumber', str(label)):
-					tempdict['lot']=label.get_text(strip=True)[4:]
-					tempkey = tempdict['lot']
-				elif re.search('protitle', str(label)):
-					tempdict['title']=label.get_text(strip=True)
-				elif re.search(u"\xA3", str(label)):
-					tempdict['price']= label.get_text().strip(u"\xA3").replace(',' , '')
-				elif re.search('^\\d\\d\\.\\d\\d', label.get_text(strip=True)):
-					tempdict['date'] = datetime.strptime(label.get_text(), '%d.%m.%y').date()
-				newdict = {tempkey : tempdict}
-				pagedict.update(newdict)
-				whiskyAuctioneer.update(pagedict)
-			else:
-				continue
-	wadata = {}
-	for bottle in whiskyAuctioneer:
-		try:
-			wadata.update({whiskyAuctioneer[bottle]['lot'] : {str(whiskyAuctioneer[bottle]['date']) : whiskyAuctioneer[bottle]['price']}})
-			wadatalist.append(float(whiskyAuctioneer[bottle]['price']))
-		except KeyError:
-			continue
-	bar.next()
+        def chunker(seq, size):
+            return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+        for group in chunker (wa_lotlist, 7):
+            tempdict = {}
+            for label in group:
+                if re.search('Current Bid:', str(label)):
+                    break
+                elif re.search('lotnumber', str(label)):
+                    tempdict['lot']=label.get_text(strip=True)[4:]
+                    tempkey = tempdict['lot']
+                elif re.search('protitle', str(label)):
+                    tempdict['title']=label.get_text(strip=True)
+                elif re.search(u"\xA3", str(label)):
+                    tempdict['price']= label.get_text().strip(u"\xA3").replace(',' , '')
+                elif re.search('^\\d\\d\\.\\d\\d', label.get_text(strip=True)):
+                    tempdict['date'] = datetime.strptime(label.get_text(), '%d.%m.%y').date()
+                newdict = {tempkey : tempdict}
+                pagedict.update(newdict)
+                whiskyAuctioneer.update(pagedict)
+            else:
+                continue
+    wadata = {}
+    for bottle in whiskyAuctioneer:
+        try:
+            #wadata.update({whiskyAuctioneer[bottle]['lot'] : {str(whiskyAuctioneer[bottle]['date']) : whiskyAuctioneer[bottle]['price']}})
+            #wadatalist.append(float(whiskyAuctioneer[bottle]['price']))
+            wapandalist.append({
+            'auctionhouse':'wa', 
+            'lotid': whiskyAuctioneer[bottle]['lot'],
+            'bottlename': whiskyAuctioneer[bottle]['title'],
+            'saledate': str(whiskyAuctioneer[bottle]['date']),
+            'hammerprice': whiskyAuctioneer[bottle]['price']
+            })
+        except KeyError:
+            continue
+    bar.next()
+    giantPandaWA = pd.DataFrame(wapandalist)
+    #giantPandaWA = pd.concat([WApanda,giantPanda], ignore_index=True)
 	#return wadata, wadatalist
-	return wadatalist
+    #print(type(giantPandaWA))
+    return giantPandaWA
 
 # Just Whisky search
 jwdata = {}
@@ -362,6 +406,8 @@ def close():
 
 if __name__ == '__main__':
 	#multiplot(wa(), wh(), jw(), gw(), swa())
-	npstats(wa(), wh(), jw(), gw(), swa())
-	close()
+    pandaUpdate(wa(), wh())
+    close()
+	#wa()
+    #npstats(wa(), wh(), jw(), gw(), swa()) 
 bar.finish()
