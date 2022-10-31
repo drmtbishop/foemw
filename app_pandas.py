@@ -66,9 +66,9 @@ giantPandadata = {
     'hammerprice': pd.Series(dtype='float')}
 giantPanda = pd.DataFrame(giantPandadata)
 
-def pandaUpdate(giantPandaWH, giantPandaWA):
+def pandaUpdate(giantPandaWH, giantPandaWA, giantPandaJW):
     # use for creating final panda
-    giantPandaFinal = pd.concat([giantPandaWH,giantPandaWA], ignore_index=True)
+    giantPandaFinal = pd.concat([giantPandaWH,giantPandaWA,giantPandaJW], ignore_index=True)
     #giantPanda2 = giantPanda1.append(giantPandaWA, ignore_index=True)
     print(giantPandaFinal.describe())
     return
@@ -201,46 +201,55 @@ def wa():
 
 # Just Whisky search
 jwdata = {}
-jwdatalist=[]
+#jwdatalist=[]
 def jw():
-	jwdatalist=[]
-	# Find total number of pages
-	jw_url_page = "https://www.just-whisky.co.uk/search?controller=search&orderby=reference&orderway=desc&category=171&search_query="+searchterm+"&submit_search.x=0&submit_search.y=0"
-	jw_htmlcode = requests_session.get(jw_url_page).content
-	jw_data = BeautifulSoup(jw_htmlcode, 'html.parser')
-	jw_pagelist = jw_data.find('div', {'id':'pagination'}).find_all('a')
-	try:
-		jw_lastpage = int(jw_pagelist[-2].contents[0])
-	except IndexError:
-		jw_lastpage = 1
-	justWhisky={}
-	bar.next()
-	tempdict={'lot':'','title':'','price':'','date':''}
-	for eachpage in range(jw_lastpage):
-		jw_url = "https://www.just-whisky.co.uk/search?controller=search&orderby=reference&orderway=desc&category=171&search_query="+searchterm+"&submit_search.x=0&submit_search.y=0&p="+str(eachpage+1)
-		jw_htmlcode = requests_session.get(jw_url).content
-		jw_data = BeautifulSoup(jw_htmlcode, 'html.parser')
-		jw_auctionlist = jw_data.find_all('div', {'class':'auction_item'})
-		for entry in jw_auctionlist:
-			tempdict = {}
-			tempdict['title']=entry.find('a', {'class':'product_img_link'}).get('title');
-			tempdict['price']=float(entry.find('span', {'class':'price'}).get_text().split(u"\xA3",1)[1].replace("," , ""))
-			tempdict['lot']=entry.find('div', {'class':'lot'}).get_text().split(': ',1)[1]
-			tempkey = tempdict['lot']
-			try:
-				tempdict['date'] = datetime.strptime("01-"+entry.find('a', {'class':'product_img_link'}).get('href').split('/',4)[3] , '%d-%B-%Y').date()
-			except ValueError:
-				tempdict['date'] = datetime.strptime("01-"+entry.find('a', {'class':'product_img_link'}).get('href').split('/',4)[3]+"-2020" , '%d-%B-%Y').date()
-			newdict = {tempkey : tempdict}
-			justWhisky.update(newdict)
+	#jwdatalist=[]
+    jwpandalist=[]
+	# Find total number of pages    
+    jw_url_page = "https://www.just-whisky.co.uk/search?controller=search&orderby=reference&orderway=desc&category=171&search_query="+searchterm+"&submit_search.x=0&submit_search.y=0"
+    jw_htmlcode = requests_session.get(jw_url_page).content
+    jw_data = BeautifulSoup(jw_htmlcode, 'html.parser')
+    jw_pagelist = jw_data.find('div', {'id':'pagination'}).find_all('a')
+    try:
+        jw_lastpage = int(jw_pagelist[-2].contents[0])
+    except IndexError:
+        jw_lastpage = 1
+    justWhisky={}
+    bar.next()
+    tempdict={'lot':'','title':'','price':'','date':''}
+    for eachpage in range(jw_lastpage):
+        jw_url = "https://www.just-whisky.co.uk/search?controller=search&orderby=reference&orderway=desc&category=171&search_query="+searchterm+"&submit_search.x=0&submit_search.y=0&p="+str(eachpage+1)
+        jw_htmlcode = requests_session.get(jw_url).content
+        jw_data = BeautifulSoup(jw_htmlcode, 'html.parser')
+        jw_auctionlist = jw_data.find_all('div', {'class':'auction_item'})
+        for entry in jw_auctionlist:
+            tempdict = {}
+            tempdict['title']=entry.find('a', {'class':'product_img_link'}).get('title');
+            tempdict['price']=float(entry.find('span', {'class':'price'}).get_text().split(u"\xA3",1)[1].replace("," , ""))
+            tempdict['lot']=entry.find('div', {'class':'lot'}).get_text().split(': ',1)[1]
+            tempkey = tempdict['lot']
+            try:
+                tempdict['date'] = datetime.strptime("01-"+entry.find('a', {'class':'product_img_link'}).get('href').split('/',4)[3] , '%d-%B-%Y').date()
+            except ValueError:
+                tempdict['date'] = datetime.strptime("01-"+entry.find('a', {'class':'product_img_link'}).get('href').split('/',4)[3]+"-2020" , '%d-%B-%Y').date()
+            newdict = {tempkey : tempdict}
+            justWhisky.update(newdict)
 
-	jwdata = {}
-	for bottle in justWhisky:
-		jwdata.update({justWhisky[bottle]['lot'] : {str(justWhisky[bottle]['date']) : justWhisky[bottle]['price']}})
-		jwdatalist.append(float(justWhisky[bottle]['price']))
-	bar.next()
+    jwdata = {}
+    for bottle in justWhisky:
+		#jwdata.update({justWhisky[bottle]['lot'] : {str(justWhisky[bottle]['date']) : justWhisky[bottle]['price']}})
+		#jwdatalist.append(float(justWhisky[bottle]['price']))
+        jwpandalist.append({
+            'auctionhouse':'jw', 
+            'lotid': justWhisky[bottle]['lot'],
+            'bottlename': justWhisky[bottle]['title'],
+            'saledate': str(justWhisky[bottle]['date']),
+            'hammerprice': justWhisky[bottle]['price']
+            })
+    bar.next()
 	#return jwdata, jwdatalist
-	return jwdatalist
+    giantPandaJW = pd.DataFrame(jwpandalist)
+    return giantPandaJW
 
 # Grand Whisky Auction search
 gwdata = {}
@@ -406,7 +415,7 @@ def close():
 
 if __name__ == '__main__':
 	#multiplot(wa(), wh(), jw(), gw(), swa())
-    pandaUpdate(wa(), wh())
+    pandaUpdate(wa(), wh(), jw())
     close()
 	#wa()
     #npstats(wa(), wh(), jw(), gw(), swa()) 
