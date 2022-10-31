@@ -2,19 +2,14 @@
 # -*- coding: utf-8 -*-
 '''
 Scraping whisky auction websites for bottle data
-using numpy instead of plotting
+using pandas instead of plotting
 '''
-#from math import isqrt
 import requests
 from bs4 import BeautifulSoup
 import re
 import html
 import sys
 from datetime import datetime
-#import matplotlib.pyplot as plt
-#from matplotlib import dates as pltdates
-#from matplotlib.ticker import AutoMinorLocator
-#import statistics as stat
 import numpy as np
 import pandas as pd
 from progress.bar import Bar
@@ -36,28 +31,6 @@ else:
 	searchterm = input("Search term: ").replace(" ","+")
 
 # Create pandas array to collect all data
-'''
-giantpandadata = {
-    'auctionhouse': pd.Series(dtype='str'), 
-    'lotid': pd.Series(dtype='str'), 
-    'bottlename': pd.Series(dtype='str'), 
-    'saledate': pd.Series(dtype='datetime64[ns]'), 
-    'hammerprice': pd.Series(dtype='float')}
-giantPanda = pd.DataFrame(giantpandadata)
-
-Adding new row to pd
-new_row = {
-    'auctionhouse':'wa', 'lotid':'123abc', 
-    'bottlename':'Daftmill 15', 'saledate':'2022-06-27', 
-    'hammerprice':150.00}
-giantPanda = giantPanda.append(new_row, ignore_index=True)
-
-AIM
-For each auctionhouse create list of dictionaries and then update by appending
-eg
-df_update = df_current.append(df_new, ignore_index=True)
-'''
-
 giantPandadata = {
     'auctionhouse': pd.Series(dtype='str'), 
     'lotid': pd.Series(dtype='str'), 
@@ -66,20 +39,20 @@ giantPandadata = {
     'hammerprice': pd.Series(dtype='float')}
 giantPanda = pd.DataFrame(giantPandadata)
 
-def pandaUpdate(giantPandaWH, giantPandaWA, giantPandaJW):
+def pandaUpdate(giantPandaWH, giantPandaWA, giantPandaJW, giantPandaGW, giantPandaSWA):
     # use for creating final panda
-    giantPandaFinal = pd.concat([giantPandaWH,giantPandaWA,giantPandaJW], ignore_index=True)
-    #giantPanda2 = giantPanda1.append(giantPandaWA, ignore_index=True)
-    print(giantPandaFinal.describe())
+    giantPandaFinal = pd.concat(
+        [giantPandaWH, giantPandaWA, giantPandaJW, giantPandaGW, giantPandaSWA], ignore_index=True)
+    #print('\n',giantPandaFinal[["auctionhouse", "bottlename"]].groupby("auctionhouse").count())
+    bar.next()
+    print('\n', giantPandaFinal.describe(include='all'))
     return
 
 
 # Whisky Hammer search
 whdata = {}
-#whdatalist=[]
 def wh():
-    whdata = {}
-    #whdatalist=[]
+    #whdata = {}
     whpandalist= []
     whsearchterm = searchterm.replace("+","-")
     wh_url = "https://www.whiskyhammer.com/auction/past/q-"+whsearchterm+"/?sortby=end-time&ps=1000"
@@ -105,9 +78,7 @@ def wh():
             tempkey = tempdict['id']
             newdict = {tempkey : tempdict}
             whiskyHammer.update(newdict)
-    #print (whiskyHammer)
     for bottle in whiskyHammer:
-        #whdata.update({whiskyHammer[bottle]['id'] : {str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'],'%d\\/%m\\/%Y').date()) : whiskyHammer[bottle]['item_price']}})
         whpandalist.append({
         'auctionhouse':'wh', 
         'lotid': whiskyHammer[bottle]['id'],
@@ -115,23 +86,14 @@ def wh():
         'saledate': str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'],'%d\\/%m\\/%Y').date()),
         'hammerprice': whiskyHammer[bottle]['item_price']
         })
-        #whdatalist.append(float(whiskyHammer[bottle]['item_price']))
-        #bignumpy = bignumpy.append()
     bar.next()
-	#return whdata, whdatalist
-    #print(whpandalist)
     giantPandaWH = pd.DataFrame(whpandalist)
-    #giantPandaWH = pd.concat([giantPandaWHdata,giantPanda], ignore_index=True)
-    #print(type(giantPandaWH))
-    #print(giantPandaWH['bottlename'].to_string(index=False))
     return giantPandaWH
 
 # Whisky Auctioneer search
 wadata = {}
-#wadatalist=[]
 def wa():
     wadata = {}
-    #wadatalist=[]
     wapandalist=[]
     wasearchterm = str(searchterm.replace('+', '%20'))
 	# Getting page by page data NOTE: page=1 is the second page
@@ -181,8 +143,6 @@ def wa():
     wadata = {}
     for bottle in whiskyAuctioneer:
         try:
-            #wadata.update({whiskyAuctioneer[bottle]['lot'] : {str(whiskyAuctioneer[bottle]['date']) : whiskyAuctioneer[bottle]['price']}})
-            #wadatalist.append(float(whiskyAuctioneer[bottle]['price']))
             wapandalist.append({
             'auctionhouse':'wa', 
             'lotid': whiskyAuctioneer[bottle]['lot'],
@@ -194,16 +154,11 @@ def wa():
             continue
     bar.next()
     giantPandaWA = pd.DataFrame(wapandalist)
-    #giantPandaWA = pd.concat([WApanda,giantPanda], ignore_index=True)
-	#return wadata, wadatalist
-    #print(type(giantPandaWA))
     return giantPandaWA
 
 # Just Whisky search
 jwdata = {}
-#jwdatalist=[]
 def jw():
-	#jwdatalist=[]
     jwpandalist=[]
 	# Find total number of pages    
     jw_url_page = "https://www.just-whisky.co.uk/search?controller=search&orderby=reference&orderway=desc&category=171&search_query="+searchterm+"&submit_search.x=0&submit_search.y=0"
@@ -237,8 +192,6 @@ def jw():
 
     jwdata = {}
     for bottle in justWhisky:
-		#jwdata.update({justWhisky[bottle]['lot'] : {str(justWhisky[bottle]['date']) : justWhisky[bottle]['price']}})
-		#jwdatalist.append(float(justWhisky[bottle]['price']))
         jwpandalist.append({
             'auctionhouse':'jw', 
             'lotid': justWhisky[bottle]['lot'],
@@ -247,176 +200,149 @@ def jw():
             'hammerprice': justWhisky[bottle]['price']
             })
     bar.next()
-	#return jwdata, jwdatalist
     giantPandaJW = pd.DataFrame(jwpandalist)
     return giantPandaJW
 
 # Grand Whisky Auction search
 gwdata = {}
-gwdatalist=[]
 def gw():
-	gwdatalist=[]
+    gwpandalist=[]
 	# Change searchterm to include quotes and spaces
-	gwsearchterm = str(searchterm.replace('+', '&'))
-	grandWhisky = {}
-	# Find total number of pages - cannot get this easily so just try 30 pages until fail
-	for pageNumber in range(30):
-		if pageNumber > 1:
-			gw_url_page = "https://www.thegrandwhiskyauction.com/past-auctions/q-"+gwsearchterm+"/page-"+str(pageNumber+1)+"/72-per-page/end-time"
-		else:
-			gw_url_page = "https://www.thegrandwhiskyauction.com/past-auctions/q-"+gwsearchterm+"/72-per-page/end-time"
-		gw_htmlcode = requests_session.get(gw_url_page).content
-		gw_data = BeautifulSoup(gw_htmlcode, 'html.parser')
-		try:
-			gw_auctionlist = gw_data.find('div',{'class' : 'siteInnerWrapper'}).find_all('script')
-		except AttributeError:
-			break
-		gw_string = str(gw_auctionlist[1])
-		# Regex for data from script tag
-		bar.next()
-		for bottle in gw_string.split('}},'):
-			tempdict = {}
-			id_data=[]
-			id_data = re.findall('\\"lot_id\\"\\:\\"\\d+\\"', bottle)
-			try:
-				tempdict['lot'] = str(id_data[0]).split(':',1)[1]
-			except IndexError:
-				break
-			date_data =[]
-			date_data = re.findall('\\"updated_at\\"\\:\\"\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\"', bottle)
-			tempdict['date'] = datetime.strptime(str(date_data[-1]).split(':',1)[1].replace('"',''), '%Y-%m-%d %H:%M:%S').date()
+    gwsearchterm = str(searchterm.replace('+', '&'))
+    grandWhisky = {}
+    # Find total number of pages - cannot get this easily so just try 30 pages until fail
+    for pageNumber in range(30):
+        if pageNumber > 1:
+            gw_url_page = "https://www.thegrandwhiskyauction.com/past-auctions/q-"+gwsearchterm+"/page-"+str(pageNumber+1)+"/72-per-page/end-time"
+        else:
+            gw_url_page = "https://www.thegrandwhiskyauction.com/past-auctions/q-"+gwsearchterm+"/72-per-page/end-time"
+        gw_htmlcode = requests_session.get(gw_url_page).content
+        gw_data = BeautifulSoup(gw_htmlcode, 'html.parser')
+        try:
+            gw_auctionlist = gw_data.find('div',{'class' : 'siteInnerWrapper'}).find_all('script')
+        except AttributeError:
+            break
+        gw_string = str(gw_auctionlist[1])
+        # Regex for data from script tag
+        bar.next()
+        for bottle in gw_string.split('}},'):
+            tempdict = {}
+            id_data=[]
+            id_data = re.findall('\\"lot_id\\"\\:\\"\\d+\\"', bottle)
+            try:
+                tempdict['lot'] = str(id_data[0]).split(':',1)[1]
+            except IndexError:
+                break
+            date_data =[]
+            date_data = re.findall('\\"updated_at\\"\\:\\"\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\"', bottle)
+            tempdict['date'] = datetime.strptime(str(date_data[-1]).split(':',1)[1].replace('"',''), '%Y-%m-%d %H:%M:%S').date()
 
-			price_data =[]
-			price_data = re.findall('\\"bid_value\\"\\:\\"\\d+\\.\\d{2}\\"', bottle)
-			tempdict['price'] = str(price_data[0]).split(':',1)[1].replace('"','')
+            price_data =[]
+            price_data = re.findall('\\"bid_value\\"\\:\\"\\d+\\.\\d{2}\\"', bottle)
+            tempdict['price'] = str(price_data[0]).split(':',1)[1].replace('"','')
 
-			name_data =[]
-			name_data = re.findall('\\"name\\"\\:\\".*?\\"\\,', bottle)
-			tempdict['title'] = str(name_data[0]).split(':',1)[1]
+            name_data =[]
+            name_data = re.findall('\\"name\\"\\:\\".*?\\"\\,', bottle)
+            tempdict['title'] = str(name_data[0]).split(':',1)[1]
 
-			tempkey = tempdict['lot']
-			newdict = {tempkey : tempdict}
-			grandWhisky.update(newdict)
-		else:
-			continue
-		break
+            tempkey = tempdict['lot']
+            newdict = {tempkey : tempdict}
+            grandWhisky.update(newdict)
+        else:
+            continue
+        break
 
-	gwdata = {}
-	for bottle in grandWhisky:
-		#print (str(datetime.strptime(whiskyHammer[bottle]['ends_human_friendly'], '%d\/%m\/%Y').date())+":"+whiskyHammer[bottle]['item_price']+":"+whiskyHammer[bottle]['name'])
-		gwdata.update({grandWhisky[bottle]['lot'] : {str(grandWhisky[bottle]['date']) : grandWhisky[bottle]['price']}})
-		gwdatalist.append(float(grandWhisky[bottle]['price']))
-	bar.next()
-	#return gwdata, gwdatalist
-	return gwdatalist
+    gwdata = {}
+    for bottle in grandWhisky:
+        gwpandalist.append({
+            'auctionhouse':'gw', 
+            'lotid': grandWhisky[bottle]['lot'],
+            'bottlename': grandWhisky[bottle]['title'],
+            'saledate': str(grandWhisky[bottle]['date']),
+            'hammerprice': grandWhisky[bottle]['price']
+            })
+    bar.next()
+    giantPandaGW = pd.DataFrame(gwpandalist)
+    return giantPandaGW
 
 # Scotch Whisky Auctions search
 swadata = {}
-swadatalist=[]
 def swa():
-	swadatalist=[]
-	# Dict of date lookups for auction dates. Key '000' catches those not on this list
-	swaAuctionDict={'000' : '01-JAN-2015',
-	'201' : '18-NOV-2017', '045' : '01-JAN-2015', '046' : '01-FEB-2015', '047' : '01-MAR-2015', '048' : '01-APR-2015', 
-	'049' : '01-MAY-2015', '050' : '01-JUN-2015', '051' : '01-JUL-2015', '052' : '02-AUG-2015', '053' : '01-SEP-2015', 
-	'054' : '01-OCT-2015', '055' : '01-NOV-2015', '056' : '06-DEC-2015', '057' : '01-JAN-2016', '058' : '07-FEB-2016', 
-	'059' : '01-MAR-2016', '060' : '01-APR-2016', '061' : '01-MAY-2016', 
-	'062' : '05-JUN-2016','063' : '06-JUL-2016', '064' : '07-AUG-2016', '065' : '04-SEP-2016', '066' : '02-OCT-2016',
-	'067' : '06-NOV-2016', '068' : '04-DEC-2016', '069' : '03-JAN-2017', '070' : '05-FEB-2017', '071' : '05-MAR-2017', '072' : '02-APR-2017', 
-	'073' : '07-MAY-2017', '074' : '04-JUN-2017', '075' : '02-JUL-2017', '076' : '06-AUG-2017', '077' : '03-SEP-2017', '078' : '01-OCT-2017', 
-	'079' : '05-NOV-2017', '080' : '03-DEC-2017', '081' : '07-JAN-2018', '082' : '04-FEB-2018', '083' : '04-MAR-2018', '084' : '01-APR-2018', 
-	'085' : '06-MAY-2018', '086' : '03-JUN-2018', '087' : '01-JUL-2018', '088' : '05-AUG-2018', '089' : '02-SEP-2018', '090' : '07-OCT-2018', 
-	'091' : '04-NOV-2018', '092' : '02-DEC-2018', '093' : '06-JAN-2019', '094' : '03-FEB-2019', '095' : '03-MAR-2019', '096' : '07-APR-2019', 
-	'097' : '05-MAY-2019', '098' : '02-JUN-2019', '099' : '07-JUL-2019', '100' : '04-AUG-2019', '101' : '01-SEP-2019', '102' : '06-OCT-2019', 
-	'103' : '03-NOV-2019', '104' : '01-DEC-2019', '105' : '05-JAN-2020', '106' : '02-FEB-2020', '107' : '01-MAR-2020', '108' : '07-JUN-2020', 
-	'109' : '05-JUL-2020', '110' : '02-AUG-2020', '111' : '06-SEP-2020', '112' : '04-OCT-2020', '113' : '01-NOV-2020', '114' : '06-DEC-2020', 
-	'115' : '05-JAN-2021', '116' : '07-FEB-2021', '117' : '07-MAR-2021', '118' : '04-APR-2021', '119' : '02-MAY-2021', '120' : '06-JUN-2021', 
-	'121' : '04-JUL-2021', '122' : '01-AUG-2021', '123' : '05-SEP-2021', '124' : '03-OCT-2021', '125' : '07-NOV-2021', '126' : '05-DEC-2021', 
-	'127' : '09-JAN-2022', '128' : '13-FEB-2022', '129' : '13-MAR-2022', '130' : '10-APR-2022', '131' : '08-MAY-2022', '132' : '12-JUN-2022', 
-	'133' : '10-JUL-2022', '134' : '14-AUG-2022', '135' : '11-SEP-2022', '136' : '09-OCT-2022'}
-	# Find total number of pages
-	swa_url_page = "https://www.scotchwhiskyauctions.com/auctions/all/?q="+searchterm+"&search=a"
-	swa_htmlcode = requests_session.get(swa_url_page).content
-	swa_data = BeautifulSoup(swa_htmlcode, 'html.parser')
-	swa_pagelist = swa_data.find('div', {'id':'lotswrap'}).find('h3').text
-	swa_lastpage = int(int(swa_pagelist.split(' ',2)[1])/20)+1
-	bar.next()
-	scotchWhiskyAuctions={}
-	tempdict={'lot':'','title':'','price':'','date':''}
-	for eachpage in range(swa_lastpage):
-		swa_url = "https://www.scotchwhiskyauctions.com/auctions/all/?q="+searchterm+"&search=a&page="+str(eachpage+1)
-		swa_htmlcode = requests_session.get(swa_url).content
-		swa_data = BeautifulSoup(swa_htmlcode, 'html.parser')
-		try:
-			swa_auctionlist = swa_data.find('div', {'id':'lots'}).find_all('a')
-		except AttributeError:
-			break
-		for entry in swa_auctionlist:
-			tempdict = {}
-			tempdict['title']=entry.find('h4').text
-			try:
-				tempdict['price']=float(entry.find('p', {'class':'sold'}).get_text().split(u"\xA3",1)[1].replace("," , ""))
-			except AttributeError:
-				break
-			tempdict['lot']=entry.find('h6').text.split(' ',2)[2]
-			tempkey = tempdict['lot']
-			#Date - comes from the lot id eg 127-01423 is the 127th auction so need a lookup dict of number:date
-			auctionNumber = str(tempdict['lot'][0:3])
-			try:
-				tempdict['date'] = swaAuctionDict[auctionNumber]
-			except KeyError:
-				auctionNumber = str('000')
-				tempdict['date'] = swaAuctionDict[auctionNumber]
-			newdict = {tempkey : tempdict}
-			scotchWhiskyAuctions.update(newdict)
-		else:
-			continue
-		break
-	swadata = {}
-	for bottle in scotchWhiskyAuctions:
-		swadata.update({scotchWhiskyAuctions[bottle]['lot'] : {str(scotchWhiskyAuctions[bottle]['date']) : scotchWhiskyAuctions[bottle]['price']}})
-		swadatalist.append(float(scotchWhiskyAuctions[bottle]['price']))
-	bar.next()
-	#return swadata, swadatalist
-	return swadatalist
-
-def npstats(wadatalist, whdatalist, jwdatalist, gwdatalist, swadatalist):
-	# Numpy stats
-	# First concantenate lists
-	npvaluesList = wadatalist + whdatalist + jwdatalist + gwdatalist + swadatalist
-	#print (npvaluesList)
-	# Then create np array
-	npvalues = np.array(npvaluesList)
-	uq = np.percentile(npvalues, 75)
-	lq = np.percentile(npvalues, 25)
-	iqr = uq - lq
-	ub = uq + 1.5 * iqr
-	lb = lq - 1.5 * iqr
-	trim_data = npvalues[npvalues < ub]
-	trim_data = npvalues[npvalues > lb]
-
-	print('\n\n','BOTTLE STATS','\n'
-	'Search Term: ',searchterm,'\n'
-	'Number of Bottles: ',npvalues.size,'\n'
-	'Minimum Price: ',np.min(npvalues),'\n'
-	'Max Price: ',np.max(npvalues),'\n'
-	'Overall Median Price: ',np.median(npvalues),'\n'
-    'Upper Quartile: ', np.percentile(npvalues, 75),'\n'
-	'Lower Quartile: ', np.percentile(npvalues, 25),'\n'
-	'Interquartile Range: ',iqr,'\n'
-	'Upper Bound: ',ub,'\n'
-	'Lower Bound: ',lb,'\n'
-	'Number of trimmed outliers: ',len(npvalues)-len(trim_data),'\n'
-	'Median Price (IQR trimmed): ',np.median(trim_data),'\n'
-	)
+    swapandalist=[]
+    # Dict of date lookups for auction dates. Key '000' catches those not on this list
+    swaAuctionDict={'000' : '01-JAN-2015',
+    '201' : '18-NOV-2017', '045' : '01-JAN-2015', '046' : '01-FEB-2015', '047' : '01-MAR-2015', '048' : '01-APR-2015', 
+    '049' : '01-MAY-2015', '050' : '01-JUN-2015', '051' : '01-JUL-2015', '052' : '02-AUG-2015', '053' : '01-SEP-2015', 
+    '054' : '01-OCT-2015', '055' : '01-NOV-2015', '056' : '06-DEC-2015', '057' : '01-JAN-2016', '058' : '07-FEB-2016', 
+    '059' : '01-MAR-2016', '060' : '01-APR-2016', '061' : '01-MAY-2016', 
+    '062' : '05-JUN-2016','063' : '06-JUL-2016', '064' : '07-AUG-2016', '065' : '04-SEP-2016', '066' : '02-OCT-2016',
+    '067' : '06-NOV-2016', '068' : '04-DEC-2016', '069' : '03-JAN-2017', '070' : '05-FEB-2017', '071' : '05-MAR-2017', '072' : '02-APR-2017', 
+    '073' : '07-MAY-2017', '074' : '04-JUN-2017', '075' : '02-JUL-2017', '076' : '06-AUG-2017', '077' : '03-SEP-2017', '078' : '01-OCT-2017', 
+    '079' : '05-NOV-2017', '080' : '03-DEC-2017', '081' : '07-JAN-2018', '082' : '04-FEB-2018', '083' : '04-MAR-2018', '084' : '01-APR-2018', 
+    '085' : '06-MAY-2018', '086' : '03-JUN-2018', '087' : '01-JUL-2018', '088' : '05-AUG-2018', '089' : '02-SEP-2018', '090' : '07-OCT-2018', 
+    '091' : '04-NOV-2018', '092' : '02-DEC-2018', '093' : '06-JAN-2019', '094' : '03-FEB-2019', '095' : '03-MAR-2019', '096' : '07-APR-2019', 
+    '097' : '05-MAY-2019', '098' : '02-JUN-2019', '099' : '07-JUL-2019', '100' : '04-AUG-2019', '101' : '01-SEP-2019', '102' : '06-OCT-2019', 
+    '103' : '03-NOV-2019', '104' : '01-DEC-2019', '105' : '05-JAN-2020', '106' : '02-FEB-2020', '107' : '01-MAR-2020', '108' : '07-JUN-2020', 
+    '109' : '05-JUL-2020', '110' : '02-AUG-2020', '111' : '06-SEP-2020', '112' : '04-OCT-2020', '113' : '01-NOV-2020', '114' : '06-DEC-2020', 
+    '115' : '05-JAN-2021', '116' : '07-FEB-2021', '117' : '07-MAR-2021', '118' : '04-APR-2021', '119' : '02-MAY-2021', '120' : '06-JUN-2021', 
+    '121' : '04-JUL-2021', '122' : '01-AUG-2021', '123' : '05-SEP-2021', '124' : '03-OCT-2021', '125' : '07-NOV-2021', '126' : '05-DEC-2021', 
+    '127' : '09-JAN-2022', '128' : '13-FEB-2022', '129' : '13-MAR-2022', '130' : '10-APR-2022', '131' : '08-MAY-2022', '132' : '12-JUN-2022', 
+    '133' : '10-JUL-2022', '134' : '14-AUG-2022', '135' : '11-SEP-2022', '136' : '09-OCT-2022'}
+    # Find total number of pages
+    swa_url_page = "https://www.scotchwhiskyauctions.com/auctions/all/?q="+searchterm+"&search=a"
+    swa_htmlcode = requests_session.get(swa_url_page).content
+    swa_data = BeautifulSoup(swa_htmlcode, 'html.parser')
+    swa_pagelist = swa_data.find('div', {'id':'lotswrap'}).find('h3').text
+    swa_lastpage = int(int(swa_pagelist.split(' ',2)[1])/20)+1
+    bar.next()
+    scotchWhiskyAuctions={}
+    tempdict={'lot':'','title':'','price':'','date':''}
+    for eachpage in range(swa_lastpage):
+        swa_url = "https://www.scotchwhiskyauctions.com/auctions/all/?q="+searchterm+"&search=a&page="+str(eachpage+1)
+        swa_htmlcode = requests_session.get(swa_url).content
+        swa_data = BeautifulSoup(swa_htmlcode, 'html.parser')
+        try:
+            swa_auctionlist = swa_data.find('div', {'id':'lots'}).find_all('a')
+        except AttributeError:
+            break
+        for entry in swa_auctionlist:
+            tempdict = {}
+            tempdict['title']=entry.find('h4').text
+            try:
+                tempdict['price']=float(entry.find('p', {'class':'sold'}).get_text().split(u"\xA3",1)[1].replace("," , ""))
+            except AttributeError:
+                break
+            tempdict['lot']=entry.find('h6').text.split(' ',2)[2]
+            tempkey = tempdict['lot']
+            #Date - comes from the lot id eg 127-01423 is the 127th auction so need a lookup dict of number:date
+            auctionNumber = str(tempdict['lot'][0:3])
+            try:
+                tempdict['date'] = swaAuctionDict[auctionNumber]
+            except KeyError:
+                auctionNumber = str('000')
+                tempdict['date'] = swaAuctionDict[auctionNumber]
+            newdict = {tempkey : tempdict}
+            scotchWhiskyAuctions.update(newdict)
+        else:
+            continue
+        break
+    swadata = {}
+    for bottle in scotchWhiskyAuctions:
+        swapandalist.append({
+        'auctionhouse':'swa', 
+        'lotid': scotchWhiskyAuctions[bottle]['lot'],
+        'bottlename': scotchWhiskyAuctions[bottle]['title'],
+        'saledate': str(scotchWhiskyAuctions[bottle]['date']),
+        'hammerprice': scotchWhiskyAuctions[bottle]['price']
+        })
+    bar.next()
+    giantPandaSWA = pd.DataFrame(swapandalist)
+    return giantPandaSWA
 
 def close():
     requests_session.close()
 
 if __name__ == '__main__':
-	#multiplot(wa(), wh(), jw(), gw(), swa())
-    pandaUpdate(wa(), wh(), jw())
-    close()
-	#wa()
-    #npstats(wa(), wh(), jw(), gw(), swa()) 
+    pandaUpdate(wa(), wh(), jw(), gw(), swa())
+    close() 
 bar.finish()
