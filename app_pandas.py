@@ -45,7 +45,10 @@ def pandaUpdate(giantPandaWH, giantPandaWA, giantPandaJW, giantPandaGW, giantPan
         [giantPandaWH, giantPandaWA, giantPandaJW, giantPandaGW, giantPandaSWA], ignore_index=True)
     #print('\n',giantPandaFinal[["auctionhouse", "bottlename"]].groupby("auctionhouse").count())
     bar.next()
-    print('\n', giantPandaFinal.describe(include='all'))
+    giantPandaFinal = giantPandaFinal.astype({'hammerprice': float})
+    gp = giantPandaFinal.groupby(['bottlename','auctionhouse'])
+    print('\n',gp['hammerprice'].describe())
+    #print('\n', giantPandaFinal.hammerprice.describe())
     return
 
 
