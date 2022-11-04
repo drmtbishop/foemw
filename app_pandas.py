@@ -46,9 +46,10 @@ def pandaUpdate(giantPandaWH, giantPandaWA, giantPandaJW, giantPandaGW, giantPan
     #print('\n',giantPandaFinal[["auctionhouse", "bottlename"]].groupby("auctionhouse").count())
     bar.next()
     giantPandaFinal = giantPandaFinal.astype({'hammerprice': float})
-    gp = giantPandaFinal.groupby(['bottlename','auctionhouse'])
-    print('\n',gp['hammerprice'].describe())
-    #print('\n', giantPandaFinal.hammerprice.describe())
+    gp = giantPandaFinal.groupby(['bottlename'])
+    print('\n',gp.agg(['count','mean']))
+    #style.format({'mean':'£{:.2f}'}))
+    print('\n', giantPandaFinal.groupby(['auctionhouse']).size())
     return
 
 
@@ -246,7 +247,7 @@ def gw():
 
             name_data =[]
             name_data = re.findall('\\"name\\"\\:\\".*?\\"\\,', bottle)
-            tempdict['title'] = str(name_data[0]).split(':',1)[1]
+            tempdict['title'] = str(name_data[0]).split(':', 1)[1].strip('",')
 
             tempkey = tempdict['lot']
             newdict = {tempkey : tempdict}
@@ -313,8 +314,9 @@ def swa():
             tempdict['title']=entry.find('h4').text
             try:
                 tempdict['price']=float(entry.find('p', {'class':'sold'}).get_text().split(u"\xA3",1)[1].replace("," , ""))
-            except AttributeError:
-                break
+            except AttributeError as e:
+                #print('Error.', repr(e))
+                continue
             tempdict['lot']=entry.find('h6').text.split(' ',2)[2]
             tempkey = tempdict['lot']
             #Date - comes from the lot id eg 127-01423 is the 127th auction so need a lookup dict of number:date
@@ -340,6 +342,7 @@ def swa():
         })
     bar.next()
     giantPandaSWA = pd.DataFrame(swapandalist)
+    print(len(giantPandaSWA))
     return giantPandaSWA
 
 def close():
