@@ -92,6 +92,7 @@ def wh():
         })
     bar.next()
     giantPandaWH = pd.DataFrame(whpandalist)
+    #print('WH',type(giantPandaWH))
     return giantPandaWH
 
 # Whisky Auctioneer search
@@ -120,7 +121,7 @@ def wa():
         try:
             wa_lotlist = wa_auctionlist.find_all('span')
         except AttributeError:
-            return wadata
+            return giantPanda
         pagedict = {}
 		# Function to split list into chunks of 7
         def chunker(seq, size):
@@ -158,6 +159,7 @@ def wa():
             continue
     bar.next()
     giantPandaWA = pd.DataFrame(wapandalist)
+    #print('WA',type(giantPandaWA))
     return giantPandaWA
 
 # Just Whisky search
@@ -205,6 +207,7 @@ def jw():
             })
     bar.next()
     giantPandaJW = pd.DataFrame(jwpandalist)
+    #print('JW',type(giantPandaJW))
     return giantPandaJW
 
 # Grand Whisky Auction search
@@ -267,6 +270,7 @@ def gw():
             })
     bar.next()
     giantPandaGW = pd.DataFrame(gwpandalist)
+    #print('GW',type(giantPandaGW))
     return giantPandaGW
 
 # Scotch Whisky Auctions search
@@ -342,7 +346,7 @@ def swa():
         })
     bar.next()
     giantPandaSWA = pd.DataFrame(swapandalist)
-    print(len(giantPandaSWA))
+    #print('SWA',type(giantPandaSWA))
     return giantPandaSWA
 
 def close():
