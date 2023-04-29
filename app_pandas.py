@@ -192,7 +192,9 @@ def jw():
             try:
                 tempdict['date'] = datetime.strptime("01-"+entry.find('a', {'class':'product_img_link'}).get('href').split('/',4)[3] , '%d-%B-%Y').date()
             except ValueError:
-                tempdict['date'] = datetime.strptime("01-"+entry.find('a', {'class':'product_img_link'}).get('href').split('/',4)[3]+"-2020" , '%d-%B-%Y').date()
+                tempdict['date'] = datetime.strptime("01-January-2023", '%d-%B-%Y').date()
+                #tempdict['date'] = datetime.strptime("01-"+entry.find('a', {'class':'product_img_link'}).get('href').split('/',4)[3].split(
+                #    '-')[0]+"-"+entry.find('a', {'class':'product_img_link'}).get('href').split('/',4)[3].split('-')[1], '%d-%B-%Y').date()
             newdict = {tempkey : tempdict}
             justWhisky.update(newdict)
 
@@ -295,7 +297,8 @@ def swa():
     '115' : '05-JAN-2021', '116' : '07-FEB-2021', '117' : '07-MAR-2021', '118' : '04-APR-2021', '119' : '02-MAY-2021', '120' : '06-JUN-2021', 
     '121' : '04-JUL-2021', '122' : '01-AUG-2021', '123' : '05-SEP-2021', '124' : '03-OCT-2021', '125' : '07-NOV-2021', '126' : '05-DEC-2021', 
     '127' : '09-JAN-2022', '128' : '13-FEB-2022', '129' : '13-MAR-2022', '130' : '10-APR-2022', '131' : '08-MAY-2022', '132' : '12-JUN-2022', 
-    '133' : '10-JUL-2022', '134' : '14-AUG-2022', '135' : '11-SEP-2022', '136' : '09-OCT-2022'}
+    '133' : '10-JUL-2022', '134' : '14-AUG-2022', '135' : '11-SEP-2022', '136' : '09-OCT-2022', '137' : '13-NOV-2022', '138' : '11-DEC-2022', 
+    '139' : '08-JAN-2023', '140' : '12-FEB-2023', '141' : '12-MAR-2023', '142' : '09-APR-2023'}
     # Find total number of pages
     swa_url_page = "https://www.scotchwhiskyauctions.com/auctions/all/?q="+searchterm+"&search=a"
     swa_htmlcode = requests_session.get(swa_url_page).content

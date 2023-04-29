@@ -156,7 +156,11 @@ def jw():
 			try:
 				tempdict['date'] = datetime.strptime("01-"+entry.find('a', {'class':'product_img_link'}).get('href').split('/',4)[3] , '%d-%B-%Y').date()
 			except ValueError:
-				tempdict['date'] = datetime.strptime("01-"+entry.find('a', {'class':'product_img_link'}).get('href').split('/',4)[3]+"-2020" , '%d-%B-%Y').date()
+				#tempdict['date'] = datetime.strptime("01-"+entry.find('a', {'class':'product_img_link'}).get('href').split('/',4)[3]+"-2020" , '%d-%B-%Y').date()
+				tempdict['date'] = datetime.strptime("01-"+entry.find('a', {'class': 'product_img_link'}).get('href').split('/', 4)[3].split(
+				    '-')[0]+"-"+entry.find('a', {'class': 'product_img_link'}).get('href').split('/', 4)[3].split('-')[1], '%d-%B-%Y').date()
+			#else:
+				#tempdict['date'] = datetime.strptime("01-"+entry.find('a', {'class':'product_img_link'}).get('href').split('/',4)[3].split('-',4)[0]+"-2023" , '%d-%B-%Y').date()
 			newdict = {tempkey : tempdict}
 			justWhisky.update(newdict)
 
