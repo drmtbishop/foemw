@@ -40,13 +40,11 @@ giantPandadata = {
     'hammerprice': pd.Series(dtype='float')}
 giantPanda = pd.DataFrame(giantPandadata)
 
-
-def pandaUpdate(giantPandaWH, giantPandaWA, giantPandaJW, giantPandaGW, giantPandaSWA):
-#def pandaUpdate(giantPandaWH, giantPandaWA, giantPandaGW, giantPandaSWA):
+def pandaUpdate(giantPandaWH, giantPandaWA, giantPandaGW, giantPandaJW, giantPandaSWA):
     # use for creating final panda
     giantPandaFinal = pd.concat(
-        [giantPandaWH, giantPandaWA, giantPandaJW, giantPandaGW, giantPandaSWA], ignore_index=True)
-       #print('\n',giantPandaFinal[["auctionhouse", "bottlename"]].groupby("auctionhouse").count())
+        [giantPandaWH, giantPandaWA, giantPandaGW, giantPandaJW, giantPandaSWA], ignore_index=True)
+    #print('\n',giantPandaFinal[["auctionhouse", "bottlename"]].groupby("auctionhouse").count())
     bar.next()
     giantPandaFinal = giantPandaFinal.astype({'hammerprice': float})
     gp = giantPandaFinal.groupby(['bottlename'])
@@ -168,41 +166,41 @@ def wa():
 # Just Whisky search
 jwdata = {}
 def jw():
-    jwpandalist=[]
+    jwpandalist=[] 
     jw_url_page = "https://www.just-whisky.co.uk/api/search_lots/?page=1&page_size=20&search="+searchterm+"&ordering=-lot_id&sold_lot=true&live_lot=false&filter_counters=false&strict_search=false"
     jw_htmlcode = requests_session.get(jw_url_page).content
     jw_parsed = json.loads(jw_htmlcode)
-	# Find total number of pages    
+    # Find total number of pages  
     jw_lastpage = int(jw_parsed['data']['total_pages'])
     justWhisky={}
     bar.next()
-    tempdict = {'lot':'','title':'', 'price':'','date':''}
+    tempdict={'lot':'','title':'','price':'','date':''}
     for eachpage in range(jw_lastpage):
-        jw_url = "https://www.just-whisky.co.uk/api/search_lots/?page="+str(eachpage+1)+"&page_size=20&search="+searchterm+"&ordering=-lot_id&sold_lot=true&live_lot=false&filter_counters=false&strict_search=false)"
-        
+        jw_url = "https://www.just-whisky.co.uk/api/search_lots/?page="+str(eachpage+1)+"&page_size=20&search="+searchterm+"&ordering=-lot_id&sold_lot=true&live_lot=false&filter_counters=false&strict_search=false"
         jw_html_page_code = requests_session.get(jw_url).content
         jw_parsed_page = json.loads(jw_html_page_code)
         tempkey = ""
-    # 'Results' entry has list of lots
-        for lot_number in range(len( jw_parsed_page['data']['results'] )):
-    tempdict = {'lot':'','title':'','price':'','date':''}
+        # 'Results' entry has list of lots
+        for lot_number in range(len(jw_parsed_page['data']['results'])): 
+            tempdict={'lot':'','title':'','price':'','date':''}
             for lot in jw_parsed_page['data']['results'][lot_number].items():
-            if lot[0] in 'reference_no':
-        tempdict['lot'] = str(lot[1])
-        tempkey = str(lot[1])
-            if lot[0] in 'item':
-        tempdict['title'] = str(lot[1]['title'])
-            if lot[0] in 'hammer_price':
-                try:
-            tempdict['price'] = str(lot[1].replace("," , ""))
-                except AttributeError:
-        tempdict['price'] = str("0")
-            if lot[0] in 'created_at':
-                tempdict['date'] = datetime.strptime( str(lot[1].split('T',1)[0]), '%Y-%m-%d').date()
-        newdict = {tempkey : tempdict}
-        justWhisky.update(newdict)
+                if lot[0] in 'reference_no':
+                    tempdict['lot'] = str(lot[1])
+                    tempkey = str(lot[1])
+                if lot[0] in 'item': 
+                    tempdict['title'] =  str(lot[1]['title'])    
+                if lot[0] in 'hammer_price':
+                    try: 
+                        tempdict['price'] = str(lot[1].replace("," , ""))
+                    except AttributeError:
+                        tempdict['price'] = str("0")
+                if lot[0] in 'created_at':
+                    tempdict['date'] = datetime.strptime(str(lot[1].split('T',1)[0]), '%Y-%m-%d').date()
+            newdict = {tempkey : tempdict}
+            justWhisky.update(newdict)
 
     #jwdata = {}
+    #print(len(justWhisky))
     for bottle in justWhisky:
         jwpandalist.append({
             'auctionhouse':'jw', 
@@ -213,8 +211,8 @@ def jw():
             })
     bar.next()
     giantPandaJW = pd.DataFrame(jwpandalist)
-    #print('JW',type(giantPandaJW))
     return giantPandaJW
+
 
 # Grand Whisky Auction search
 gwdata = {}
@@ -360,7 +358,6 @@ def close():
     requests_session.close()
 
 if __name__ == '__main__':
-    pandaUpdate(wa(), wh(), gw(), swa())
-    #pandaUpdate(wa(), wh(), jw(), gw(), swa())
+    pandaUpdate(wa(), wh(), gw(), jw(), swa())
     close() 
 bar.finish()
